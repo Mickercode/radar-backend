@@ -6,6 +6,9 @@ import { env, isProd } from './config/env';
 import { authRouter } from './routes/auth';
 import { catalogRouter } from './routes/catalog';
 import { libraryRouter } from './routes/library';
+import { insightsRouter } from './routes/insights';
+import { reviewsRouter } from './routes/reviews';
+import { weeklyRouter } from './routes/weekly';
 import { errorHandler, notFoundHandler } from './middleware/error';
 
 export function createApp() {
@@ -31,8 +34,12 @@ export function createApp() {
   // Both mount at root because their paths are top-level (/feed, /saved, …).
   app.use(catalogRouter);
   app.use(libraryRouter);
-  // Knowledge graph, SRS, quiz, weekly review, and the AI pipeline mount here
-  // in the next build chunks.
+  // Knowledge graph + quiz, spaced repetition, weekly review.
+  app.use('/insights', insightsRouter);
+  app.use('/reviews', reviewsRouter);
+  app.use(weeklyRouter);
+  // The AI pipeline (/capture, quiz generation, embedding auto-link) mounts here
+  // in the next build chunk.
 
   app.use(notFoundHandler);
   app.use(errorHandler);

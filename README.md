@@ -70,6 +70,6 @@ in the dashboard (marked `sync: false`).
 - [x] Schema (all tables ported from `supabase/migrations/`)
 - [x] Auth (signup / login / name / password / delete)
 - [x] Catalog + per-user routes (feed, content, topics, key-moments, saved, playback, preferences)
-- [ ] Knowledge graph + SRS + quiz + weekly review
+- [x] Knowledge graph + SRS + quiz attempts + weekly review (quiz _generation_ stubbed → AI chunk)
 - [ ] AI pipeline (`/capture`, quiz generation, auto-link embeddings)
 - [ ] App rewire (`radar-app` → axios against this API)
