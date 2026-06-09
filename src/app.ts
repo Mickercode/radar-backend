@@ -9,6 +9,7 @@ import { libraryRouter } from './routes/library';
 import { insightsRouter } from './routes/insights';
 import { reviewsRouter } from './routes/reviews';
 import { weeklyRouter } from './routes/weekly';
+import { captureRouter } from './routes/capture';
 import { errorHandler, notFoundHandler } from './middleware/error';
 
 export function createApp() {
@@ -38,8 +39,9 @@ export function createApp() {
   app.use('/insights', insightsRouter);
   app.use('/reviews', reviewsRouter);
   app.use(weeklyRouter);
-  // The AI pipeline (/capture, quiz generation, embedding auto-link) mounts here
-  // in the next build chunk.
+  // AI pipeline: /capture (quiz generation + embedding auto-link live under
+  // /insights). Needs GEMINI_API_KEY; routes 503 cleanly without it.
+  app.use(captureRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

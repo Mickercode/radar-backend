@@ -11,6 +11,7 @@ import {
 } from '../lib/serialize';
 import { dueDateAfter, intervalDaysForStep } from '../services/srs';
 import { generateQuizQuestions } from '../services/quiz';
+import { autolinkInsight } from '../services/autolink';
 
 // Knowledge graph (PLAYBOOK §4B) + quiz (§3). All routes require auth and are
 // scoped to the JWT user id. Ported from the app's old services/api.ts.
@@ -204,7 +205,21 @@ insightsRouter.get(
       res.json(cached.map(toQuizQuestion));
       return;
     }
-    await generateQuizQuestions(id); // throws 503 until the AI chunk lands
+    // Cache miss → generate, persist, and return (verifies ownership + 503 if
+    // GEMINI_API_KEY is unset).
+    res.json(await generateQuizQuestions(id, userId(req)));
+  }),
+);
+
+// POST /insights/:id/autolink → { ok, embedded, links }
+// Embeds the insight and writes auto-edges to similar insights. Fire-and-forget
+// from the client's perspective (it's called after a save), but synchronous here.
+insightsRouter.post(
+  '/:id/autolink',
+  asyncHandler(async (req, res) => {
+    const id = requireParam(req, 'id');
+    const result = await autolinkInsight(id, userId(req));
+    res.json({ ok: true, ...result });
   }),
 );
 
