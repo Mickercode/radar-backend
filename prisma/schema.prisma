@@ -1,0 +1,320 @@
+// Radar backend schema — ported from supabase/migrations/ in the app repo.
+//
+// Differences from the Supabase original (intentional, fresh DB, no data to migrate):
+//   - `user_id` columns referenced Supabase's `auth.users`; here they reference
+//     our own `app_users` and are real uuid foreign keys.
+//   - The knowledge-graph tables used `text` user_id (Clerk-era leftover); here
+//     they're uuid FKs to app_users, normalized.
+//   - `updated_at` is handled by Prisma's @updatedAt instead of DB triggers.
+//   - The "auto-create a review row when an insight is inserted" DB trigger is
+//     done in application code (a transaction in the insight-create route).
+//   - RLS is gone entirely — the backend scopes every query by the JWT's user id.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgcrypto, vector]
+}
+
+// ── Auth ───────────────────────────────────────────────────────────────────────
+
+model AppUser {
+  id           String   @id @default(uuid()) @db.Uuid
+  // Stored lowercased; uniqueness enforced here + in code (case-insensitive).
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  name         String?
+  username     String?
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  savedItems    SavedItem[]
+  playbackState PlaybackState[]
+  preferences   UserPreferences?
+  insights      Insight[]
+  insightEdges  InsightEdge[]
+  reviews       InsightReview[]
+  quizQuestions InsightQuizQuestion[]
+  quizAttempts  InsightQuizAttempt[]
+  shares        InsightShare[]
+  embeddings    InsightEmbedding[]
+
+  @@map("app_users")
+}
+
+// ── Catalog ──────────────────────────────────────────────────────────────────
+
+enum ContentType {
+  news
+  podcast
+  clip
+}
+
+model Topic {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String
+  slug      String    @unique
+  color     String?
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  content   Content[]
+
+  @@map("topics")
+}
+
+model Content {
+  id           String      @id @default(uuid()) @db.Uuid
+  type         ContentType
+  title        String
+  source       String
+  duration     Int         @default(0)
+  thumbnailUrl String?     @map("thumbnail_url")
+  audioUrl     String?     @map("audio_url")
+  articleUrl   String?     @map("article_url")
+  videoUrl     String?     @map("video_url")
+  aspectRatio  Decimal?    @map("aspect_ratio") @db.Decimal(5, 3)
+  externalId   String?     @map("external_id")
+  topicId      String?     @map("topic_id") @db.Uuid
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  topic      Topic?      @relation(fields: [topicId], references: [id], onDelete: SetNull)
+  summary    Summary?
+  keyMoments KeyMoment[]
+  savedItems SavedItem[]
+  playback   PlaybackState[]
+  insights   Insight[]
+
+  @@unique([source, title], name: "content_source_title_unique")
+  @@unique([externalId], name: "content_external_id_unique")
+  @@index([createdAt(sort: Desc)])
+  @@index([type])
+  @@index([topicId])
+  @@map("content")
+}
+
+model Summary {
+  id               String   @id @default(uuid()) @db.Uuid
+  contentId        String   @unique @map("content_id") @db.Uuid
+  // Legacy fields (nullable since the §4A editorial rewrite).
+  summary          String?
+  keyTakeaways     String[] @default([]) @map("key_takeaways")
+  whyItMatters     String?  @map("why_it_matters")
+  // PLAYBOOK §4A What-Why-Edge + 10/10 Test + Nigeria relevance.
+  what             String?
+  why              String?
+  edge             String?
+  tier             Int?     @db.SmallInt
+  forwardable      Boolean?
+  advantage        Boolean?
+  nonObvious       Boolean? @map("non_obvious")
+  learnable        Boolean?
+  nigeriaRelevance Int?     @map("nigeria_relevance") @db.SmallInt
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@index([tier, nigeriaRelevance(sort: Desc)])
+  @@map("summaries")
+}
+
+model KeyMoment {
+  id           String   @id @default(uuid()) @db.Uuid
+  contentId    String   @map("content_id") @db.Uuid
+  timestampSec Int      @map("timestamp_sec")
+  label        String
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@index([contentId, timestampSec])
+  @@map("key_moments")
+}
+
+// ── Per-user catalog state ──────────────────────────────────────────────────
+
+model SavedItem {
+  userId    String   @map("user_id") @db.Uuid
+  contentId String   @map("content_id") @db.Uuid
+  savedAt   DateTime @default(now()) @map("saved_at") @db.Timestamptz(6)
+
+  user    AppUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@id([userId, contentId])
+  @@index([userId, savedAt(sort: Desc)])
+  @@map("saved_items")
+}
+
+model PlaybackState {
+  userId    String   @map("user_id") @db.Uuid
+  contentId String   @map("content_id") @db.Uuid
+  position  Int      @default(0)
+  speed     Decimal  @default(1.0) @db.Decimal(3, 2)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user    AppUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@id([userId, contentId])
+  @@map("playback_state")
+}
+
+model UserPreferences {
+  userId        String   @id @map("user_id") @db.Uuid
+  topicIds      String[] @default([]) @map("topic_ids") @db.Uuid
+  contentTypes  String[] @default([]) @map("content_types")
+  playbackSpeed Decimal  @default(1.0) @map("playback_speed") @db.Decimal(3, 2)
+  pushToken     String?  @map("push_token")
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user AppUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([pushToken])
+  @@map("user_preferences")
+}
+
+// ── Knowledge graph (PLAYBOOK §4B) ──────────────────────────────────────────
+
+model Insight {
+  id                String   @id @default(uuid()) @db.Uuid
+  userId            String   @map("user_id") @db.Uuid
+  sourceContentId   String?  @map("source_content_id") @db.Uuid
+  title             String
+  what              String
+  why               String
+  edge              String
+  sourceText        String?  @map("source_text")
+  sourcePositionSec Int?     @map("source_position_sec")
+  tier              Int      @default(2)
+  tags              String[] @default([])
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user          AppUser              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceContent Content?             @relation(fields: [sourceContentId], references: [id], onDelete: SetNull)
+  embedding     InsightEmbedding?
+  edgesFrom     InsightEdge[]        @relation("edgeFrom")
+  edgesTo       InsightEdge[]        @relation("edgeTo")
+  review        InsightReview?
+  quizQuestions InsightQuizQuestion[]
+  quizAttempts  InsightQuizAttempt[]
+  shares        InsightShare[]
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([sourceContentId])
+  @@index([tags], type: Gin)
+  @@map("insight")
+}
+
+model InsightEmbedding {
+  insightId String                       @id @map("insight_id") @db.Uuid
+  userId    String                       @map("user_id") @db.Uuid
+  // pgvector — similarity queries are run via raw SQL ($queryRaw) since Prisma
+  // has no native vector operators. The HNSW index is added in a manual SQL
+  // migration (see prisma/migrations note in README).
+  embedding Unsupported("vector(768)")
+  model     String                       @default("gemini-text-embedding-004")
+  createdAt DateTime                     @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  insight Insight @relation(fields: [insightId], references: [id], onDelete: Cascade)
+  user    AppUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("insight_embedding")
+}
+
+model InsightEdge {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  fromInsightId String   @map("from_insight_id") @db.Uuid
+  toInsightId   String   @map("to_insight_id") @db.Uuid
+  strength      Decimal  @default(1.0) @db.Decimal(4, 3)
+  reason        String?
+  source        String   @default("auto")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user AppUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  from Insight @relation("edgeFrom", fields: [fromInsightId], references: [id], onDelete: Cascade)
+  to   Insight @relation("edgeTo", fields: [toInsightId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, fromInsightId, toInsightId])
+  @@index([userId, fromInsightId])
+  @@index([userId, toInsightId])
+  @@map("insight_edge")
+}
+
+// ── Spaced repetition (PLAYBOOK §4C) ────────────────────────────────────────
+
+model InsightReview {
+  id             String    @id @default(uuid()) @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  insightId      String    @unique @map("insight_id") @db.Uuid
+  dueAt          DateTime  @map("due_at") @db.Timestamptz(6)
+  lastReviewedAt DateTime? @map("last_reviewed_at") @db.Timestamptz(6)
+  step           Int       @default(0)
+  lastGrade      Int?      @map("last_grade")
+  reviewCount    Int       @default(0) @map("review_count")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user    AppUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  insight Insight @relation(fields: [insightId], references: [id], onDelete: Cascade)
+
+  @@index([userId, dueAt])
+  @@map("insight_review")
+}
+
+// ── Understand Once quiz (PLAYBOOK §3) ──────────────────────────────────────
+
+model InsightQuizQuestion {
+  id           String   @id @default(uuid()) @db.Uuid
+  insightId    String   @map("insight_id") @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  question     String
+  options      String[]
+  correctIndex Int      @map("correct_index")
+  displayOrder Int      @default(0) @map("display_order")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  insight Insight @relation(fields: [insightId], references: [id], onDelete: Cascade)
+  user    AppUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([insightId, displayOrder])
+  @@map("insight_quiz_question")
+}
+
+model InsightQuizAttempt {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  insightId    String   @map("insight_id") @db.Uuid
+  correctCount Int      @map("correct_count")
+  totalCount   Int      @map("total_count")
+  attemptedAt  DateTime @default(now()) @map("attempted_at") @db.Timestamptz(6)
+
+  user    AppUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  insight Insight @relation(fields: [insightId], references: [id], onDelete: Cascade)
+
+  @@index([userId, attemptedAt(sort: Desc)])
+  @@map("insight_quiz_attempt")
+}
+
+// ── Share tracking (PLAYBOOK §4E) ───────────────────────────────────────────
+
+model InsightShare {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  insightId String   @map("insight_id") @db.Uuid
+  platform  String?
+  sharedAt  DateTime @default(now()) @map("shared_at") @db.Timestamptz(6)
+
+  user    AppUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  insight Insight @relation(fields: [insightId], references: [id], onDelete: Cascade)
+
+  @@index([userId, sharedAt(sort: Desc)])
+  @@index([insightId])
+  @@map("insight_share")
+}
