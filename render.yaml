@@ -29,6 +29,26 @@ services:
       - key: CORS_ORIGIN
         value: '*'
 
+  # Ingestion worker — pulls RSS/podcasts/YouTube → Gemini editorial → feed.
+  # Runs every 6 hours. Trigger a run manually in the dashboard to populate now.
+  - type: cron
+    name: radar-ingest
+    runtime: node
+    plan: starter
+    schedule: '0 */6 * * *'
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: node dist/jobs/ingest.js
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: radar-db
+          property: connectionString
+      - key: GEMINI_API_KEY
+        sync: false
+      # Optional — only needed for YouTube clip ingestion (durations).
+      - key: GOOGLE_API_KEY
+        sync: false
+
 databases:
   - name: radar-db
     plan: basic-256mb

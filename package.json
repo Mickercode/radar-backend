@@ -15,7 +15,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "ingest": "node dist/jobs/ingest.js"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
@@ -27,6 +28,7 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "prisma": "^5.22.0",
+    "rss-parser": "^3.13.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {
