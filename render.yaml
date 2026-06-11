@@ -5,11 +5,13 @@ services:
     name: radar-api
     runtime: node
     plan: starter
-    # db push syncs the schema (incl. the pgvector/pgcrypto extensions) directly —
-    # the project has no migration history yet. Switch to `prisma migrate deploy`
-    # once you start committing migrations (see RENDER_DEPLOY.md).
-    buildCommand: npm install && npm run build && npx prisma db push --skip-generate
-    startCommand: npm run start
+    # --include=dev: NODE_ENV=production makes npm skip devDependencies, but the
+    # build needs TypeScript. This forces them in.
+    buildCommand: npm install --include=dev && npm run build
+    # db push runs at START (not build) so the database is reachable and ready —
+    # it syncs the schema + pgvector/pgcrypto extensions. Idempotent. Switch to
+    # `prisma migrate deploy` once you commit migrations (see RENDER_DEPLOY.md).
+    startCommand: npx prisma db push --skip-generate && npm run start
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
