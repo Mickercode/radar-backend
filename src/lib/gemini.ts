@@ -5,7 +5,7 @@ import { ApiError } from './http';
 // Gemini in the old Edge Functions — gemini-2.0-flash for generation and
 // text-embedding-004 (768-dim) for embeddings — so we keep both here.
 
-const GEN_MODEL = 'gemini-2.5-flash';
+const GEN_MODEL = 'gemini-2.5-flash-lite';
 const EMBED_MODEL = 'text-embedding-004';
 const GEN_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEN_MODEL}:generateContent`;
 const EMBED_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${EMBED_MODEL}:embedContent`;

@@ -3,12 +3,12 @@
 // a tier. Tier 3 is dropped by the caller. Self-contained (reads env directly)
 // so the cron job doesn't pull the API's config/env.
 
-// 2.5-flash: the 2.0 models had their free tier zeroed (limit:0). 2.5-flash has
-// free quota and supports structured-JSON output.
-const GEMINI_MODEL = 'gemini-2.5-flash';
+// flash-lite: highest free-tier throughput, cheapest, least contended — and the
+// 2.0 models had their free tier zeroed (limit:0). Handles structured JSON fine.
+const GEMINI_MODEL = 'gemini-2.5-flash-lite';
 const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
-// ~6.5s floor (~9 RPM) keeps us under the 2.5-flash free-tier rate limit.
-const MIN_GEMINI_GAP_MS = 6500;
+// ~4.5s floor (~13 RPM) — safely under flash-lite's free-tier rate limit.
+const MIN_GEMINI_GAP_MS = 4500;
 
 let lastCallAt = 0;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
