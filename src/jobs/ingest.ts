@@ -1,23 +1,28 @@
 import { PrismaClient } from '@prisma/client';
 import Parser from 'rss-parser';
 import {
-  DAILY_PUBLISH_CAP,
   MAX_CLIP_DURATION_SEC,
   MAX_PODCAST_DURATION_SEC,
   MIN_CLIP_DURATION_SEC,
   MIN_PODCAST_DURATION_SEC,
   NEWS_FEEDS,
+  PER_NEWS_FEED,
+  PER_PODCAST_FEED,
+  PER_YOUTUBE_CHANNEL,
   PODCAST_FEEDS,
   PROMO_TITLE_PATTERNS,
+  TARGET_CLIPS,
+  TARGET_NEWS,
+  TARGET_PODCASTS,
   YOUTUBE_CHANNELS,
 } from './feeds';
 import { generateSummary, type SummaryResult } from './editorial';
 
-// Radar ingestion worker. Ported from the old ingest-content Edge Function:
-// pulls RSS (news + podcasts) + YouTube clips, runs them through the Gemini
-// editorial engine, and writes publishable rows (Tier 1/2) to content/summaries/
-// key_moments — capped at 10/day (PLAYBOOK §7). Runs as a Render Cron Job.
-// Self-contained env: needs DATABASE_URL + GEMINI_API_KEY (+ GOOGLE_API_KEY for clips).
+// Radar ingestion worker. Pulls RSS (news + podcasts) + YouTube clips, scores
+// them through the Gemini editorial engine, and writes publishable rows (Tier
+// 1/2). Round-robins across sources so every outlet (incl. Nigerian ones) and
+// content type gets represented. Dedup by (source,title)/external_id keeps
+// re-runs cheap. Self-contained env: DATABASE_URL + GEMINI_API_KEY (+ GOOGLE_API_KEY).
 
 const prisma = new PrismaClient();
 
@@ -33,9 +38,13 @@ interface FeedItem {
   mediaThumbnail?: { $?: { url?: string } };
 }
 
+// Browser-ish UA — several Nigerian outlets (e.g. TheCable) 403 a plain bot UA.
+const UA =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+
 const parser: Parser<unknown, FeedItem> = new Parser({
-  timeout: 15000,
-  headers: { 'User-Agent': 'Radar/1.0' },
+  timeout: 20000,
+  headers: { 'User-Agent': UA, Accept: 'application/rss+xml, application/xml, text/xml, */*' },
   customFields: {
     item: [
       ['content:encoded', 'contentEncoded'],
@@ -106,14 +115,20 @@ function summaryData(s: SummaryResult) {
     forwardable: s.forwardable, advantage: s.advantage,
     nonObvious: s.non_obvious, learnable: s.learnable,
     nigeriaRelevance: s.nigeria_relevance,
-    // Legacy mirror so any non-§4 consumer still renders.
     summary: s.what,
     keyTakeaways: [s.why, s.edge].filter((x) => x.length > 0),
     whyItMatters: s.why,
   };
 }
 
-// Topic upsert-on-demand, cached per run.
+// Interleave groups so we round-robin across sources: [A0,B0,C0,A1,B1,...].
+function roundRobin<T>(groups: T[][]): T[] {
+  const out: T[] = [];
+  const max = Math.max(0, ...groups.map((g) => g.length));
+  for (let i = 0; i < max; i++) for (const g of groups) if (i < g.length) out.push(g[i]!);
+  return out;
+}
+
 const topicCache: Record<string, string> = {};
 async function getTopicId(slug: string): Promise<string> {
   if (topicCache[slug]) return topicCache[slug]!;
@@ -128,8 +143,7 @@ async function getTopicId(slug: string): Promise<string> {
 }
 
 async function alreadyHave(source: string, title: string): Promise<boolean> {
-  const row = await prisma.content.findFirst({ where: { source, title }, select: { id: true } });
-  return !!row;
+  return !!(await prisma.content.findFirst({ where: { source, title }, select: { id: true } }));
 }
 
 interface Stats {
@@ -140,82 +154,87 @@ interface Stats {
 // ── News ─────────────────────────────────────────────────────────────────────
 
 async function ingestNews(stats: Stats, budget: { left: number }) {
+  // Gather candidates per feed, then round-robin so sources interleave.
+  const groups: { source: string; topic: string; topicId: string; item: FeedItem }[][] = [];
   for (const feed of NEWS_FEEDS) {
-    if (budget.left <= 0) break;
     try {
       const topicId = await getTopicId(feed.topic);
       const parsed = await parser.parseURL(feed.url);
-      for (const item of (parsed.items ?? []).slice(0, 5)) {
-        if (budget.left <= 0) break;
-        const title = item.title?.trim();
-        if (!title) continue;
-        if (looksLikePromo(title)) { stats.skippedPromo++; continue; }
-        if (await alreadyHave(feed.source, title)) continue;
-
-        const description = descriptionOf(item);
-        const s = await generateSummary(title, description, feed.topic);
-        if (!s.relevant) { stats.skippedIrrelevant++; continue; }
-        if (s.tier === 3) { stats.skippedTier3++; continue; }
-
-        await prisma.content.create({
-          data: {
-            type: 'news', title, source: feed.source,
-            duration: estimateReadTime(description),
-            thumbnailUrl: imageOf(item), articleUrl: item.link ?? null,
-            topicId,
-            summary: { create: summaryData(s) },
-          },
-        });
-        stats.news++; budget.left--;
-      }
+      groups.push(
+        (parsed.items ?? []).slice(0, PER_NEWS_FEED).map((item) => ({ source: feed.source, topic: feed.topic, topicId, item })),
+      );
     } catch (e) {
       console.warn(`[ingest] news feed failed: ${feed.source}`, (e as Error).message);
     }
+  }
+
+  for (const c of roundRobin(groups)) {
+    if (budget.left <= 0) break;
+    const title = c.item.title?.trim();
+    if (!title) continue;
+    if (looksLikePromo(title)) { stats.skippedPromo++; continue; }
+    if (await alreadyHave(c.source, title)) continue;
+
+    const description = descriptionOf(c.item);
+    const s = await generateSummary(title, description, c.topic);
+    if (!s.relevant) { stats.skippedIrrelevant++; continue; }
+    if (s.tier === 3) { stats.skippedTier3++; continue; }
+
+    await prisma.content.create({
+      data: {
+        type: 'news', title, source: c.source,
+        duration: estimateReadTime(description),
+        thumbnailUrl: imageOf(c.item), articleUrl: c.item.link ?? null,
+        topicId: c.topicId, summary: { create: summaryData(s) },
+      },
+    });
+    stats.news++; budget.left--;
   }
 }
 
 // ── Podcasts ─────────────────────────────────────────────────────────────────
 
 async function ingestPodcasts(stats: Stats, budget: { left: number }) {
+  const groups: { source: string; topic: string; topicId: string; item: FeedItem }[][] = [];
   for (const feed of PODCAST_FEEDS) {
-    if (budget.left <= 0) break;
     try {
       const topicId = await getTopicId(feed.topic);
       const parsed = await parser.parseURL(feed.url);
-      for (const item of (parsed.items ?? []).slice(0, 3)) {
-        if (budget.left <= 0) break;
-        const title = item.title?.trim();
-        if (!title) continue;
-        if (looksLikePromo(title)) { stats.skippedPromo++; continue; }
-
-        const duration = parseItunesDuration(item.itunes?.duration) ?? 1800;
-        if (duration < MIN_PODCAST_DURATION_SEC || duration > MAX_PODCAST_DURATION_SEC) {
-          stats.skippedDuration++; continue;
-        }
-        if (await alreadyHave(feed.source, title)) continue;
-
-        const description = descriptionOf(item);
-        const s = await generateSummary(title, description, feed.topic);
-        if (!s.relevant) { stats.skippedIrrelevant++; continue; }
-        if (s.tier === 3) { stats.skippedTier3++; continue; }
-
-        const created = await prisma.content.create({
-          data: {
-            type: 'podcast', title, source: feed.source, duration,
-            thumbnailUrl: imageOf(item), audioUrl: item.enclosure?.url ?? null,
-            topicId,
-            summary: { create: summaryData(s) },
-          },
-          select: { id: true },
-        });
-        const moments = synthesizeMoments(duration).map((m) => ({ contentId: created.id, ...m }));
-        if (moments.length) await prisma.keyMoment.createMany({ data: moments });
-
-        stats.podcasts++; budget.left--;
-      }
+      groups.push(
+        (parsed.items ?? []).slice(0, PER_PODCAST_FEED).map((item) => ({ source: feed.source, topic: feed.topic, topicId, item })),
+      );
     } catch (e) {
       console.warn(`[ingest] podcast feed failed: ${feed.source}`, (e as Error).message);
     }
+  }
+
+  for (const c of roundRobin(groups)) {
+    if (budget.left <= 0) break;
+    const title = c.item.title?.trim();
+    if (!title) continue;
+    if (looksLikePromo(title)) { stats.skippedPromo++; continue; }
+
+    const duration = parseItunesDuration(c.item.itunes?.duration) ?? 1800;
+    if (duration < MIN_PODCAST_DURATION_SEC || duration > MAX_PODCAST_DURATION_SEC) { stats.skippedDuration++; continue; }
+    if (await alreadyHave(c.source, title)) continue;
+
+    const description = descriptionOf(c.item);
+    const s = await generateSummary(title, description, c.topic);
+    if (!s.relevant) { stats.skippedIrrelevant++; continue; }
+    if (s.tier === 3) { stats.skippedTier3++; continue; }
+
+    const created = await prisma.content.create({
+      data: {
+        type: 'podcast', title, source: c.source, duration,
+        thumbnailUrl: imageOf(c.item), audioUrl: c.item.enclosure?.url ?? null,
+        topicId: c.topicId, summary: { create: summaryData(s) },
+      },
+      select: { id: true },
+    });
+    const moments = synthesizeMoments(duration).map((m) => ({ contentId: created.id, ...m }));
+    if (moments.length) await prisma.keyMoment.createMany({ data: moments });
+
+    stats.podcasts++; budget.left--;
   }
 }
 
@@ -253,7 +272,8 @@ async function fetchDurations(ids: string[], apiKey: string): Promise<Map<string
 }
 
 const ytParser: Parser<unknown, YtItem> = new Parser({
-  timeout: 15000,
+  timeout: 20000,
+  headers: { 'User-Agent': UA },
   customFields: { item: [['yt:videoId', 'videoId']] },
 });
 
@@ -263,88 +283,92 @@ async function ingestClips(stats: Stats, budget: { left: number }) {
     console.log('[ingest] GOOGLE_API_KEY not set — skipping YouTube clips');
     return;
   }
+  interface ClipCand {
+    source: string; topic: string; topicId: string;
+    videoId: string; title: string; description: string; duration: number;
+  }
+
+  // Gather fresh candidates across channels, then round-robin.
+  const groups: ClipCand[][] = [];
   for (const ch of YOUTUBE_CHANNELS) {
-    if (budget.left <= 0) break;
     try {
       const topicId = await getTopicId(ch.topic);
       const parsed = await ytParser.parseURL(`https://www.youtube.com/feeds/videos.xml?channel_id=${ch.channelId}`);
-      const candidates = (parsed.items ?? [])
-        .slice(0, 10)
-        .map((it) => ({ videoId: it.videoId || (it.id ?? '').replace('yt:video:', ''), title: it.title?.trim() ?? '', description: descriptionOf(it) }))
+      const cands = (parsed.items ?? [])
+        .slice(0, PER_YOUTUBE_CHANNEL)
+        .map((it) => ({
+          source: ch.source, topic: ch.topic, topicId,
+          videoId: it.videoId || (it.id ?? '').replace('yt:video:', ''),
+          title: it.title?.trim() ?? '', description: descriptionOf(it),
+        }))
         .filter((c) => c.videoId && c.title);
-      if (candidates.length === 0) continue;
+      if (cands.length === 0) continue;
 
       const existing = await prisma.content.findMany({
-        where: { externalId: { in: candidates.map((c) => c.videoId) } },
+        where: { externalId: { in: cands.map((c) => c.videoId) } },
         select: { externalId: true },
       });
       const seen = new Set(existing.map((r) => r.externalId));
-      const fresh = candidates.filter((c) => !seen.has(c.videoId));
+      const fresh = cands.filter((c) => !seen.has(c.videoId));
       if (fresh.length === 0) continue;
 
       const durations = await fetchDurations(fresh.map((c) => c.videoId), apiKey);
-
+      const kept: ClipCand[] = [];
       for (const c of fresh) {
-        if (budget.left <= 0) break;
-        if (looksLikePromo(c.title)) { stats.skippedPromo++; continue; }
-        const duration = durations.get(c.videoId) ?? 0;
-        if (duration < MIN_CLIP_DURATION_SEC || duration > MAX_CLIP_DURATION_SEC) {
-          stats.skippedDuration++; continue;
-        }
-        const s = await generateSummary(c.title, c.description, ch.topic);
-        if (!s.relevant) { stats.skippedIrrelevant++; continue; }
-        if (s.tier === 3) { stats.skippedTier3++; continue; }
-
-        await prisma.content.create({
-          data: {
-            type: 'clip', title: c.title, source: ch.source, duration,
-            thumbnailUrl: `https://i.ytimg.com/vi/${c.videoId}/hqdefault.jpg`,
-            videoUrl: `https://www.youtube.com/watch?v=${c.videoId}`,
-            externalId: c.videoId, aspectRatio: 0.5625, topicId,
-            summary: { create: summaryData(s) },
-          },
-        });
-        stats.clips++; budget.left--;
+        const d = durations.get(c.videoId) ?? 0;
+        if (d < MIN_CLIP_DURATION_SEC || d > MAX_CLIP_DURATION_SEC) { stats.skippedDuration++; continue; }
+        kept.push({ ...c, duration: d });
       }
+      if (kept.length) groups.push(kept);
     } catch (e) {
       console.warn(`[ingest] youtube channel failed: ${ch.source}`, (e as Error).message);
     }
+  }
+
+  for (const c of roundRobin(groups)) {
+    if (budget.left <= 0) break;
+    if (looksLikePromo(c.title)) { stats.skippedPromo++; continue; }
+    const s = await generateSummary(c.title, c.description, c.topic);
+    if (!s.relevant) { stats.skippedIrrelevant++; continue; }
+    if (s.tier === 3) { stats.skippedTier3++; continue; }
+
+    await prisma.content.create({
+      data: {
+        type: 'clip', title: c.title, source: c.source, duration: c.duration,
+        thumbnailUrl: `https://i.ytimg.com/vi/${c.videoId}/hqdefault.jpg`,
+        videoUrl: `https://www.youtube.com/watch?v=${c.videoId}`,
+        externalId: c.videoId, aspectRatio: 0.5625, topicId: c.topicId,
+        summary: { create: summaryData(s) },
+      },
+    });
+    stats.clips++; budget.left--;
   }
 }
 
 // ── Orchestrator ─────────────────────────────────────────────────────────────
 
 export async function runIngest() {
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
-  const publishedToday = await prisma.content.count({ where: { createdAt: { gte: startOfDay } } });
-  const budget = { left: Math.max(0, DAILY_PUBLISH_CAP - publishedToday) };
-  console.log(`[ingest] publishedToday=${publishedToday} budget=${budget.left}`);
   if (!process.env.GEMINI_API_KEY) {
-    console.error(
-      '[ingest] GEMINI_API_KEY is MISSING on this service — every item will be ' +
-        'dropped as "irrelevant" and nothing will be inserted. Set it in this ' +
-        "service's Environment.",
-    );
+    console.error('[ingest] GEMINI_API_KEY is MISSING — every item will be dropped. Set it on this service.');
   } else {
     console.log('[ingest] GEMINI_API_KEY present ✓');
   }
+  console.log(`[ingest] targets — news=${TARGET_NEWS} podcasts=${TARGET_PODCASTS} clips=${TARGET_CLIPS}`);
 
   const stats: Stats = {
     news: 0, podcasts: 0, clips: 0,
     skippedPromo: 0, skippedDuration: 0, skippedIrrelevant: 0, skippedTier3: 0,
   };
 
-  if (budget.left > 0) await ingestNews(stats, budget);
-  if (budget.left > 0) await ingestPodcasts(stats, budget);
-  if (budget.left > 0) await ingestClips(stats, budget);
+  await ingestNews(stats, { left: TARGET_NEWS });
+  await ingestPodcasts(stats, { left: TARGET_PODCASTS });
+  await ingestClips(stats, { left: TARGET_CLIPS });
 
   const total = stats.news + stats.podcasts + stats.clips;
   console.log(`[ingest] done — inserted ${total}`, stats);
-  return { total, ...stats, budgetRemaining: budget.left };
+  return { total, ...stats };
 }
 
-// CLI entry (Render Cron Job runs `node dist/jobs/ingest.js`).
 if (require.main === module) {
   runIngest()
     .then(() => prisma.$disconnect())

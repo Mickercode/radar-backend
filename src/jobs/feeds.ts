@@ -49,8 +49,19 @@ export const YOUTUBE_CHANNELS: YoutubeChannel[] = [
   { channelId: 'UCUHW94eEFW7hkUMVaZz4eDg', source: 'MinutePhysics', topic: 'science' },
 ];
 
-// Editorial / quality knobs (PLAYBOOK §7, §9).
-export const DAILY_PUBLISH_CAP = 10;
+// Per-run targets — how many of each type to publish per ingest. Round-robin
+// across sources means these are spread across all feeds (Nigerian included),
+// not front-loaded from one outlet. Dedup makes re-runs cheap (only new items
+// hit the AI), so there's no daily cap — the feed grows and stays fresh.
+export const TARGET_NEWS = 40;
+export const TARGET_PODCASTS = 12;
+export const TARGET_CLIPS = 12;
+
+// How many recent items to pull from each source as candidates.
+export const PER_NEWS_FEED = 12;
+export const PER_PODCAST_FEED = 6;
+export const PER_YOUTUBE_CHANNEL = 10;
+
 export const MIN_PODCAST_DURATION_SEC = 300;
 export const MAX_PODCAST_DURATION_SEC = 4 * 60 * 60;
 export const MIN_CLIP_DURATION_SEC = 15;
