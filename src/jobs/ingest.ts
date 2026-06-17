@@ -320,6 +320,15 @@ export async function runIngest() {
   const publishedToday = await prisma.content.count({ where: { createdAt: { gte: startOfDay } } });
   const budget = { left: Math.max(0, DAILY_PUBLISH_CAP - publishedToday) };
   console.log(`[ingest] publishedToday=${publishedToday} budget=${budget.left}`);
+  if (!process.env.GEMINI_API_KEY) {
+    console.error(
+      '[ingest] GEMINI_API_KEY is MISSING on this service — every item will be ' +
+        'dropped as "irrelevant" and nothing will be inserted. Set it in this ' +
+        "service's Environment.",
+    );
+  } else {
+    console.log('[ingest] GEMINI_API_KEY present ✓');
+  }
 
   const stats: Stats = {
     news: 0, podcasts: 0, clips: 0,
