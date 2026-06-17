@@ -116,7 +116,9 @@ export async function generateSummary(
       });
 
       if (!res.ok) {
+        const errBody = (await res.text().catch(() => '')).slice(0, 200).replace(/\s+/g, ' ');
         const transient = res.status === 429 || res.status >= 500;
+        console.warn(`[editorial] Gemini ${res.status}: ${errBody}`);
         if (transient && attempt === 0) {
           const retryAfter = parseInt(res.headers.get('retry-after') ?? '', 10);
           await sleep(Number.isFinite(retryAfter) ? retryAfter * 1000 : 3000);
@@ -153,11 +155,12 @@ export async function generateSummary(
         nigeria_relevance: nigeria,
         tier,
       };
-    } catch {
+    } catch (e) {
       if (attempt === 0) {
         await sleep(1000);
         continue;
       }
+      console.warn('[editorial] Gemini call threw:', (e as Error).message);
       return dropOnFailure();
     }
   }
