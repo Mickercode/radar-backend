@@ -2,7 +2,7 @@ import { env } from '../config/env';
 import { ApiError } from './http';
 
 // Anthropic Claude client for AI generation
-const CLAUDE_MODEL = 'claude-3-5-sonnet-20241022';
+const CLAUDE_MODEL = 'claude-sonnet-4-6';
 const CLAUDE_ENDPOINT = 'https://api.anthropic.com/v1/messages';
 
 function apiKey(): string {

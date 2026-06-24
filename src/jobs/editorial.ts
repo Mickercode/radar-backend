@@ -3,7 +3,7 @@
 // a tier. Tier 3 is dropped by the caller. Self-contained (reads env directly)
 // so the cron job doesn't pull the API's config/env.
 
-const CLAUDE_MODEL = 'claude-3-5-sonnet-20241022';
+const CLAUDE_MODEL = 'claude-sonnet-4-6';
 const CLAUDE_ENDPOINT = 'https://api.anthropic.com/v1/messages';
 // ~4.5s floor (~13 RPM) — safely under Claude's rate limits.
 const MIN_CLAUDE_GAP_MS = 4500;
