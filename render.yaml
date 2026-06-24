@@ -1,0 +1,59 @@
+# Render blueprint for the Radar backend + its Postgres.
+# Create via Render dashboard → "New +" → "Blueprint" pointed at this repo.
+services:
+  - type: web
+    name: radar-api
+    runtime: node
+    plan: starter
+    # --include=dev: NODE_ENV=production makes npm skip devDependencies, but the
+    # build needs TypeScript. This forces them in.
+    buildCommand: npm install --include=dev && npm run build
+    # db push runs at START (not build) so the database is reachable and ready —
+    # it syncs the schema + pgvector/pgcrypto extensions. Idempotent. Switch to
+    # `prisma migrate deploy` once you commit migrations (see RENDER_DEPLOY.md).
+    startCommand: npx prisma db push --skip-generate && npm run start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: APP_JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: radar-db
+          property: connectionString
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: VOYAGE_API_KEY
+        sync: false
+      - key: CORS_ORIGIN
+        value: '*'
+
+  # Ingestion worker — pulls RSS/podcasts → Claude editorial engine → feed.
+  # Runs every 6 hours. Trigger a run manually in the Render dashboard to populate now.
+  # Needs ANTHROPIC_API_KEY (set via dashboard — marked sync:false) or every item
+  # gets dropped silently. GOOGLE_API_KEY is optional (YouTube clip durations).
+  - type: cron
+    name: radar-ingest
+    runtime: node
+    plan: starter
+    schedule: '0 */6 * * *'
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: node dist/jobs/ingest.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: radar-db
+          property: connectionString
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      # Optional — only needed for YouTube clip ingestion (durations).
+      - key: GOOGLE_API_KEY
+        sync: false
+
+databases:
+  - name: radar-db
+    plan: basic-256mb
+    postgresMajorVersion: '16'
