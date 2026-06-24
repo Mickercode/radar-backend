@@ -15,7 +15,6 @@ function apiKey(): string {
 interface GenerateOptions {
   temperature?: number;
   maxOutputTokens?: number;
-  responseSchema?: unknown;
 }
 
 /**
@@ -36,7 +35,7 @@ export async function generateJson(prompt: string, opts: GenerateOptions = {}): 
       max_tokens: opts.maxOutputTokens ?? 1024,
       temperature: opts.temperature ?? 0.4,
       messages: [{ role: 'user', content: prompt }],
-      ...(opts.responseSchema ? { response_format: { type: 'json_object', schema: opts.responseSchema } } : {}),
+      response_format: { type: 'json_object' },
     }),
   });
 

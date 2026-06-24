@@ -15,19 +15,6 @@ interface GeneratedQuestion {
   correct_index: number;
 }
 
-const RESPONSE_SCHEMA = {
-  type: 'array',
-  items: {
-    type: 'object',
-    properties: {
-      question: { type: 'string' },
-      options: { type: 'array', items: { type: 'string' } },
-      correct_index: { type: 'integer' },
-    },
-    required: ['question', 'options', 'correct_index'],
-  },
-};
-
 function buildPrompt(i: { title: string; what: string; why: string; edge: string }): string {
   return `You are designing a 3-question multiple-choice quiz to verify the reader actually understood the insight below.
 
@@ -82,7 +69,6 @@ export async function generateQuizQuestions(insightId: string, uid: string) {
   const parsed = await generateJson(buildPrompt(insight), {
     temperature: 0.6,
     maxOutputTokens: 1200,
-    responseSchema: RESPONSE_SCHEMA,
   });
   const generated = validate(parsed);
   if (!generated) throw new ApiError(502, 'Quiz generation failed');

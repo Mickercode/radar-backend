@@ -89,28 +89,6 @@ async function incrementUploadCount(uid: string): Promise<void> {
   });
 }
 
-// AI response schema for document analysis
-const ANALYSIS_SCHEMA = {
-  type: 'object',
-  properties: {
-    title: { type: 'string' },
-    what: { type: 'string' },
-    why: { type: 'string' },
-    edge: { type: 'string' },
-    forwardable: { type: 'boolean' },
-    advantage: { type: 'boolean' },
-    non_obvious: { type: 'boolean' },
-    learnable: { type: 'boolean' },
-    nigeria_relevance: { type: 'integer' },
-    tier: { type: 'integer' },
-  },
-  required: [
-    'title', 'what', 'why', 'edge',
-    'forwardable', 'advantage', 'non_obvious', 'learnable',
-    'nigeria_relevance', 'tier',
-  ],
-};
-
 function buildAnalysisPrompt(filename: string, text: string): string {
   // Truncate text if too long (keep first 8000 chars for context)
   const truncatedText = text.length > 8000 ? text.slice(0, 8000) + '...' : text;
@@ -192,7 +170,6 @@ contentRouter.post(
     const parsed = (await generateJson(buildAnalysisPrompt(req.file.originalname || 'uploaded document', text), {
       temperature: 0.25,
       maxOutputTokens: 800,
-      responseSchema: ANALYSIS_SCHEMA,
     })) as Record<string, unknown>;
 
     // Increment upload count on success

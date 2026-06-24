@@ -41,23 +41,6 @@ function dropOnFailure(): SummaryResult {
   };
 }
 
-const RESPONSE_SCHEMA = {
-  type: 'object',
-  properties: {
-    relevant: { type: 'boolean' },
-    what: { type: 'string' },
-    why: { type: 'string' },
-    edge: { type: 'string' },
-    forwardable: { type: 'boolean' },
-    advantage: { type: 'boolean' },
-    non_obvious: { type: 'boolean' },
-    learnable: { type: 'boolean' },
-    nigeria_relevance: { type: 'integer' },
-    tier: { type: 'integer' },
-  },
-  required: ['relevant', 'what', 'why', 'edge', 'forwardable', 'advantage', 'non_obvious', 'learnable', 'nigeria_relevance', 'tier'],
-};
-
 function buildPrompt(title: string, body: string, topic: string): string {
   return `You are Radar's editorial AI. Radar publishes at most 10 high-quality insights daily for ambitious Nigerian/African readers — students, founders, professionals. PUBLISH LESS, MAKE IT SHARPER, MAKE IT STICK.
 
@@ -101,7 +84,7 @@ export async function generateSummary(
     max_tokens: 800,
     temperature: 0.25,
     messages: [{ role: 'user', content: buildPrompt(title, body, topic) }],
-    response_format: { type: 'json_object', schema: RESPONSE_SCHEMA },
+    response_format: { type: 'json_object' },
   };
 
   for (let attempt = 0; attempt <= 1; attempt++) {

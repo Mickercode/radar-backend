@@ -16,27 +16,6 @@ export interface CapturedInsight {
   nigeriaRelevance: 0 | 1 | 2 | 3;
 }
 
-const RESPONSE_SCHEMA = {
-  type: 'object',
-  properties: {
-    title: { type: 'string' },
-    what: { type: 'string' },
-    why: { type: 'string' },
-    edge: { type: 'string' },
-    forwardable: { type: 'boolean' },
-    advantage: { type: 'boolean' },
-    non_obvious: { type: 'boolean' },
-    learnable: { type: 'boolean' },
-    nigeria_relevance: { type: 'integer' },
-    tier: { type: 'integer' },
-  },
-  required: [
-    'title', 'what', 'why', 'edge',
-    'forwardable', 'advantage', 'non_obvious', 'learnable',
-    'nigeria_relevance', 'tier',
-  ],
-};
-
 function buildPrompt(c: ExtractedContent): string {
   // Kept aligned with the §4A editorial prompt from ingest-content/capture-url.
   return `You are Radar's editorial AI. Radar publishes insights in What-Why-Edge format for ambitious Nigerian / African readers.
@@ -81,7 +60,6 @@ export async function captureUrl(url: string): Promise<CapturedInsight> {
   const parsed = (await generateJson(buildPrompt(content), {
     temperature: 0.25,
     maxOutputTokens: 800,
-    responseSchema: RESPONSE_SCHEMA,
   })) as Record<string, unknown>;
 
   return {
