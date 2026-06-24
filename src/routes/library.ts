@@ -107,18 +107,26 @@ libraryRouter.get(
             content_types: row.contentTypes,
             playback_speed: row.playbackSpeed.toNumber(),
             push_token: row.pushToken,
+            preferred_country: row.preferredCountry,
+            notifications_enabled: row.notificationsEnabled,
+            digest_time: row.digestTime,
+            review_reminders: row.reviewReminders,
           }
         : null,
     );
   }),
 );
 
-// PUT /preferences { topic_ids?, content_types?, playback_speed?, push_token? }
+// PUT /preferences { topic_ids?, content_types?, playback_speed?, push_token?, preferred_country?, notifications_enabled?, digest_time?, review_reminders? }
 const prefsBody = z.object({
   topic_ids: z.array(z.string().uuid()).optional(),
   content_types: z.array(z.string()).optional(),
   playback_speed: z.number().positive().optional(),
   push_token: z.string().nullable().optional(),
+  preferred_country: z.enum(['NG', 'AFRICA', 'INTL']).nullable().optional(),
+  notifications_enabled: z.boolean().optional(),
+  digest_time: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+  review_reminders: z.boolean().optional(),
 });
 libraryRouter.put(
   '/preferences',
@@ -134,12 +142,20 @@ libraryRouter.put(
         contentTypes: p.content_types ?? [],
         playbackSpeed: p.playback_speed ?? 1.0,
         pushToken: p.push_token ?? null,
+        preferredCountry: p.preferred_country ?? null,
+        notificationsEnabled: p.notifications_enabled ?? false,
+        digestTime: p.digest_time ?? null,
+        reviewReminders: p.review_reminders ?? true,
       },
       update: {
         ...(p.topic_ids !== undefined && { topicIds: p.topic_ids }),
         ...(p.content_types !== undefined && { contentTypes: p.content_types }),
         ...(p.playback_speed !== undefined && { playbackSpeed: p.playback_speed }),
         ...(p.push_token !== undefined && { pushToken: p.push_token }),
+        ...(p.preferred_country !== undefined && { preferredCountry: p.preferred_country }),
+        ...(p.notifications_enabled !== undefined && { notificationsEnabled: p.notifications_enabled }),
+        ...(p.digest_time !== undefined && { digestTime: p.digest_time }),
+        ...(p.review_reminders !== undefined && { reviewReminders: p.review_reminders }),
       },
     });
     res.json({ ok: true });

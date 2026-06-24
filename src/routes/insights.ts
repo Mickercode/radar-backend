@@ -206,7 +206,7 @@ insightsRouter.get(
       return;
     }
     // Cache miss → generate, persist, and return (verifies ownership + 503 if
-    // GEMINI_API_KEY is unset).
+    // ANTHROPIC_API_KEY is unset).
     res.json(await generateQuizQuestions(id, userId(req)));
   }),
 );
@@ -264,5 +264,26 @@ insightsRouter.post(
     }
 
     res.status(201).json(toQuizAttempt(attempt));
+  }),
+);
+
+// DELETE /insights/:id → { ok }
+// Removes the insight and cascades to edges/review/quiz/shares/embeddings.
+insightsRouter.delete(
+  '/:id',
+  asyncHandler(async (req, res) => {
+    const id = requireParam(req, 'id');
+    const uid = userId(req);
+
+    const insight = await prisma.insight.findFirst({
+      where: { id, userId: uid },
+    });
+    if (!insight) throw notFound('Insight not found');
+
+    await prisma.insight.delete({
+      where: { id },
+    });
+
+    res.json({ ok: true });
   }),
 );

@@ -5,7 +5,7 @@ import { toContentItem, type SerializedContent } from '../lib/serialize';
 // services/api.ts so behaviour is identical, just running server-side now.
 // Order: Impact (tier) → Nigeria context → Urgency (recency). Items without
 // §4A scoring (legacy rows) sort last by recency.
-function rankFeed(items: SerializedContent[]): SerializedContent[] {
+function rankFeed(items: SerializedContent[], country?: string): SerializedContent[] {
   const NOW = Date.now();
   // Half-life weight on recency, clamped at 7 days so a slightly older Tier 1
   // still beats a fresh Tier 2 but nothing older than a week gets buried.
@@ -19,7 +19,16 @@ function rankFeed(items: SerializedContent[]): SerializedContent[] {
 
     const nA = a.summary?.nigeriaRelevance ?? 0;
     const nB = b.summary?.nigeriaRelevance ?? 0;
-    if (nA !== nB) return nB - nA;
+
+    // Boost Nigeria relevance based on country preference
+    if (country === 'NG') {
+      // For Nigeria tab, heavily boost Nigeria-relevant content
+      if (nA !== nB) return nB - nA;
+    } else if (country === 'AFRICA') {
+      // For Africa tab, moderately boost Nigeria-relevant content (as proxy for Africa)
+      if (nA !== nB && (nA >= 2 || nB >= 2)) return nB - nA;
+    }
+    // For INTL, don't boost by nigeriaRelevance
 
     return ageHours(a.createdAt) - ageHours(b.createdAt);
   });
@@ -35,7 +44,7 @@ export interface FeedResult {
 // brand-new user who picked one narrow topic still sees a full first screen.
 const SPARSE_TOPIC_THRESHOLD = 5;
 
-export async function getFeed(topicIds: string[]): Promise<FeedResult> {
+export async function getFeed(topicIds: string[], country?: string): Promise<FeedResult> {
   // Step 1: filtered query (the user's actual topic preferences).
   let primary: SerializedContent[] = [];
   if (topicIds.length > 0) {
@@ -45,7 +54,7 @@ export async function getFeed(topicIds: string[]): Promise<FeedResult> {
       orderBy: { createdAt: 'desc' },
       take: 40,
     });
-    primary = rankFeed(rows.map(toContentItem));
+    primary = rankFeed(rows.map(toContentItem), country);
   }
 
   // Enough signal already — return the filtered set as-is.
@@ -61,7 +70,7 @@ export async function getFeed(topicIds: string[]): Promise<FeedResult> {
     orderBy: { createdAt: 'desc' },
     take: 40,
   });
-  const fallback = rankFeed(rows.map(toContentItem));
+  const fallback = rankFeed(rows.map(toContentItem), country);
   const seen = new Set(primary.map((x) => x.id));
   const merged = [...primary, ...fallback.filter((x) => !seen.has(x.id))].slice(0, 20);
 

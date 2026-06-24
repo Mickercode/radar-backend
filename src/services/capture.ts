@@ -1,5 +1,5 @@
 import { ApiError } from '../lib/http';
-import { generateJson } from '../lib/gemini';
+import { generateJson } from '../lib/anthropic';
 import { fetchClean, type ExtractedContent } from '../lib/jina';
 
 // "Save to Radar" — turns an arbitrary URL into a publishable What-Why-Edge

@@ -29,12 +29,13 @@ catalogRouter.get(
   }),
 );
 
-// GET /feed?topicIds=a,b → { items, isFallback, matchedTopics }
+// GET /feed?topicIds=a,b&country=NG → { items, isFallback, matchedTopics }
 catalogRouter.get(
   '/feed',
   asyncHandler(async (req, res) => {
     const topicIds = parseList(req.query.topicIds);
-    res.json(await getFeed(topicIds));
+    const country = req.query.country as string | undefined;
+    res.json(await getFeed(topicIds, country));
   }),
 );
 
@@ -92,5 +93,44 @@ catalogRouter.get(
       orderBy: { timestampSec: 'asc' },
     });
     res.json(moments.map(toKeyMoment));
+  }),
+);
+
+// GET /search?q=&type=&country= → ContentItem[]
+// Full-text search over content title/source and summary fields.
+catalogRouter.get(
+  '/search',
+  asyncHandler(async (req, res) => {
+    const { q, type, country } = req.query;
+    const query = z.string().trim().optional().parse(q);
+    
+    if (!query || query.length === 0) {
+      throw badRequest('Search query is required');
+    }
+
+    const where: any = {
+      OR: [
+        { title: { contains: query, mode: 'insensitive' } },
+        { source: { contains: query, mode: 'insensitive' } },
+      ],
+    };
+
+    // Add type filter if provided
+    if (type) {
+      where.type = contentType.parse(type);
+    }
+
+    // Note: country filter is a placeholder for future implementation
+    // The frontend already has GPS detection and country selection
+    // Backend ranking could boost preferred country when that field is added
+
+    const rows = await prisma.content.findMany({
+      where,
+      include: { summary: true },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+
+    res.json(rows.map(toContentItem));
   }),
 );

@@ -30,19 +30,25 @@ model AppUser {
   passwordHash String   @map("password_hash")
   name         String?
   username     String?
+  avatarUrl    String?  @map("avatar_url")
+  isPremium    Boolean  @default(false) @map("is_premium")
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  savedItems    SavedItem[]
-  playbackState PlaybackState[]
-  preferences   UserPreferences?
-  insights      Insight[]
-  insightEdges  InsightEdge[]
-  reviews       InsightReview[]
-  quizQuestions InsightQuizQuestion[]
-  quizAttempts  InsightQuizAttempt[]
-  shares        InsightShare[]
-  embeddings    InsightEmbedding[]
+  savedItems          SavedItem[]
+  playbackState       PlaybackState[]
+  preferences         UserPreferences?
+  insights            Insight[]
+  insightEdges        InsightEdge[]
+  reviews             InsightReview[]
+  quizQuestions       InsightQuizQuestion[]
+  quizAttempts        InsightQuizAttempt[]
+  shares              InsightShare[]
+  embeddings          InsightEmbedding[]
+  uploadCounts        UploadCount[]
+  subscription        Subscription?
+  passwordResetTokens PasswordResetToken[]
+  pushSubscriptions  PushSubscription[]
 
   @@map("app_users")
 }
@@ -164,14 +170,19 @@ model PlaybackState {
 }
 
 model UserPreferences {
-  userId        String   @id @map("user_id") @db.Uuid
-  topicIds      String[] @default([]) @map("topic_ids") @db.Uuid
-  contentTypes  String[] @default([]) @map("content_types")
-  playbackSpeed Decimal  @default(1.0) @map("playback_speed") @db.Decimal(3, 2)
-  pushToken     String?  @map("push_token")
-  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  userId                String   @id @map("user_id") @db.Uuid
+  topicIds              String[] @default([]) @map("topic_ids") @db.Uuid
+  contentTypes          String[] @default([]) @map("content_types")
+  playbackSpeed         Decimal  @default(1.0) @map("playback_speed") @db.Decimal(3, 2)
+  pushToken             String?  @map("push_token")
+  preferredCountry     String?  @map("preferred_country") @db.VarChar(10)
+  notificationsEnabled Boolean  @default(false) @map("notifications_enabled")
+  digestTime           String?  @map("digest_time") @db.VarChar(10) // Format: "09:00"
+  reviewReminders      Boolean  @default(true) @map("review_reminders")
+  updatedAt            DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  user AppUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user             AppUser             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pushSubscriptions PushSubscription[]
 
   @@index([pushToken])
   @@map("user_preferences")
@@ -213,11 +224,12 @@ model Insight {
 model InsightEmbedding {
   insightId String                       @id @map("insight_id") @db.Uuid
   userId    String                       @map("user_id") @db.Uuid
-  // pgvector — similarity queries are run via raw SQL ($queryRaw) since Prisma
-  // has no native vector operators. The HNSW index is added in a manual SQL
-  // migration (see prisma/migrations note in README).
-  embedding Unsupported("vector(768)")
-  model     String                       @default("gemini-text-embedding-004")
+  // pgvector (1024-dim vectors from Voyage AI voyage-4-lite). Similarity
+  // queries are run via raw SQL ($queryRaw) since Prisma has no native vector
+  // operators. The HNSW index is added in a manual SQL migration (see
+  // prisma/migrations note in README).
+  embedding Unsupported("vector(1024)")
+  model     String                       @default("voyage-voyage-4-lite-1024")
   createdAt DateTime                     @default(now()) @map("created_at") @db.Timestamptz(6)
 
   insight Insight @relation(fields: [insightId], references: [id], onDelete: Cascade)
@@ -317,4 +329,71 @@ model InsightShare {
   @@index([userId, sharedAt(sort: Desc)])
   @@index([insightId])
   @@map("insight_share")
+}
+
+// ── File upload tracking ───────────────────────────────────────────────────────
+
+model UploadCount {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  month     String   @db.VarChar(7) // Format: "2024-01"
+  count     Int      @default(0)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user AppUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, month])
+  @@index([userId, month])
+  @@map("upload_count")
+}
+
+// ── Subscription / Billing ──────────────────────────────────────────────────────
+
+model Subscription {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @unique @map("user_id") @db.Uuid
+  plan      String   @default("free") // "free" | "monthly" | "annual"
+  renewsAt  DateTime? @map("renews_at") @db.Timestamptz(6)
+  paystackReference String? @map("paystack_reference")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user AppUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("subscription")
+}
+
+// ── Password Reset ─────────────────────────────────────────────────────────────
+
+model PasswordResetToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  token     String   @unique
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user AppUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@map("password_reset_token")
+}
+
+// ── Web Push Subscriptions ─────────────────────────────────────────────────────
+
+model PushSubscription {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  endpoint  String
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user AppUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@unique([userId, endpoint])
+  @@map("push_subscription")
 }

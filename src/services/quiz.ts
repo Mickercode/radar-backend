@@ -1,6 +1,6 @@
 import { prisma } from '../lib/prisma';
 import { ApiError, notFound } from '../lib/http';
-import { generateJson } from '../lib/gemini';
+import { generateJson } from '../lib/anthropic';
 import { toQuizQuestion } from '../lib/serialize';
 
 // "Understand Once" quiz generation (PLAYBOOK §3). Ported from generate-quiz.

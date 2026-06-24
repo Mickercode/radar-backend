@@ -19,10 +19,10 @@ import {
 import { generateSummary, type SummaryResult } from './editorial';
 
 // Radar ingestion worker. Pulls RSS (news + podcasts) + YouTube clips, scores
-// them through the Gemini editorial engine, and writes publishable rows (Tier
+// them through the Claude editorial engine, and writes publishable rows (Tier
 // 1/2). Round-robins across sources so every outlet (incl. Nigerian ones) and
 // content type gets represented. Dedup by (source,title)/external_id keeps
-// re-runs cheap. Self-contained env: DATABASE_URL + GEMINI_API_KEY (+ GOOGLE_API_KEY).
+// re-runs cheap. Self-contained env: DATABASE_URL + ANTHROPIC_API_KEY (+ GOOGLE_API_KEY).
 
 const prisma = new PrismaClient();
 
@@ -348,10 +348,10 @@ async function ingestClips(stats: Stats, budget: { left: number }) {
 // ── Orchestrator ─────────────────────────────────────────────────────────────
 
 export async function runIngest() {
-  if (!process.env.GEMINI_API_KEY) {
-    console.error('[ingest] GEMINI_API_KEY is MISSING — every item will be dropped. Set it on this service.');
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.error('[ingest] ANTHROPIC_API_KEY is MISSING — every item will be dropped. Set it on this service.');
   } else {
-    console.log('[ingest] GEMINI_API_KEY present ✓');
+    console.log('[ingest] ANTHROPIC_API_KEY present ✓');
   }
   console.log(`[ingest] targets — news=${TARGET_NEWS} podcasts=${TARGET_PODCASTS} clips=${TARGET_CLIPS}`);
 

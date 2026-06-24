@@ -3,11 +3,15 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { env, isProd } from './config/env';
+import { accountRouter } from './routes/account';
 import { authRouter } from './routes/auth';
 import { catalogRouter } from './routes/catalog';
+import { contentRouter } from './routes/content';
 import { libraryRouter } from './routes/library';
 import { insightsRouter } from './routes/insights';
+import { pushRouter } from './routes/push';
 import { reviewsRouter } from './routes/reviews';
+import { subscriptionRouter } from './routes/subscription';
 import { weeklyRouter } from './routes/weekly';
 import { captureRouter } from './routes/capture';
 import { errorHandler, notFoundHandler } from './middleware/error';
@@ -31,13 +35,17 @@ export function createApp() {
 
   // ── Routes ──────────────────────────────────────────────────────────────────
   app.use('/auth', authRouter);
+  app.use('/account', accountRouter);
   // Public catalog (feed/content/topics) + per-user state (saved/playback/prefs).
   // Both mount at root because their paths are top-level (/feed, /saved, …).
   app.use(catalogRouter);
+  app.use('/content', contentRouter);
   app.use(libraryRouter);
   // Knowledge graph + quiz, spaced repetition, weekly review.
   app.use('/insights', insightsRouter);
   app.use('/reviews', reviewsRouter);
+  app.use('/push', pushRouter);
+  app.use('/subscription', subscriptionRouter);
   app.use(weeklyRouter);
   // AI pipeline: /capture (quiz generation + embedding auto-link live under
   // /insights). Needs GEMINI_API_KEY; routes 503 cleanly without it.

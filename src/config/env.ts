@@ -10,9 +10,8 @@ const schema = z.object({
   CORS_ORIGIN: z.string().default('*'),
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
   APP_JWT_SECRET: z.string().min(16, 'APP_JWT_SECRET must be at least 16 chars'),
-  // Optional until the AI pipeline chunk lands.
   ANTHROPIC_API_KEY: z.string().optional(),
-  GEMINI_API_KEY: z.string().optional(),
+  VOYAGE_API_KEY: z.string().optional(),
 });
 
 const parsed = schema.safeParse(process.env);

@@ -1,21 +1,19 @@
 // Editorial Quality Engine (PLAYBOOK §4A / §9) for the ingestion job.
-// Gemini 2.0 Flash scores each item, rewrites it as What-Why-Edge, and assigns
+// Claude 3.5 Sonnet scores each item, rewrites it as What-Why-Edge, and assigns
 // a tier. Tier 3 is dropped by the caller. Self-contained (reads env directly)
 // so the cron job doesn't pull the API's config/env.
 
-// flash-lite: highest free-tier throughput, cheapest, least contended — and the
-// 2.0 models had their free tier zeroed (limit:0). Handles structured JSON fine.
-const GEMINI_MODEL = 'gemini-2.5-flash-lite';
-const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
-// ~4.5s floor (~13 RPM) — safely under flash-lite's free-tier rate limit.
-const MIN_GEMINI_GAP_MS = 4500;
+const CLAUDE_MODEL = 'claude-3-5-sonnet-20241022';
+const CLAUDE_ENDPOINT = 'https://api.anthropic.com/v1/messages';
+// ~4.5s floor (~13 RPM) — safely under Claude's rate limits.
+const MIN_CLAUDE_GAP_MS = 4500;
 
 let lastCallAt = 0;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function throttle() {
   const elapsed = Date.now() - lastCallAt;
-  if (elapsed < MIN_GEMINI_GAP_MS) await sleep(MIN_GEMINI_GAP_MS - elapsed);
+  if (elapsed < MIN_CLAUDE_GAP_MS) await sleep(MIN_CLAUDE_GAP_MS - elapsed);
   lastCallAt = Date.now();
 }
 
@@ -92,35 +90,38 @@ export async function generateSummary(
   description: string,
   topic: string,
 ): Promise<SummaryResult> {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return dropOnFailure();
 
   const body = description.replace(/<[^>]*>/g, '').trim().slice(0, 2000);
   if (body.length < 40) return dropOnFailure();
 
   const payload = {
-    contents: [{ parts: [{ text: buildPrompt(title, body, topic) }] }],
-    generationConfig: {
-      temperature: 0.25,
-      maxOutputTokens: 800,
-      responseMimeType: 'application/json',
-      responseSchema: RESPONSE_SCHEMA,
-    },
+    model: CLAUDE_MODEL,
+    max_tokens: 800,
+    temperature: 0.25,
+    messages: [{ role: 'user', content: buildPrompt(title, body, topic) }],
+    response_format: { type: 'json_object', schema: RESPONSE_SCHEMA },
   };
 
   for (let attempt = 0; attempt <= 1; attempt++) {
     try {
       await throttle();
-      const res = await fetch(GEMINI_ENDPOINT, {
+      const res = await fetch(CLAUDE_ENDPOINT, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'false',
+        },
         body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
         const errBody = (await res.text().catch(() => '')).slice(0, 200).replace(/\s+/g, ' ');
         const transient = res.status === 429 || res.status >= 500;
-        console.warn(`[editorial] Gemini ${res.status}: ${errBody}`);
+        console.warn(`[editorial] Claude ${res.status}: ${errBody}`);
         if (transient && attempt === 0) {
           const retryAfter = parseInt(res.headers.get('retry-after') ?? '', 10);
           await sleep(Number.isFinite(retryAfter) ? retryAfter * 1000 : 3000);
@@ -130,9 +131,9 @@ export async function generateSummary(
       }
 
       const data = (await res.json()) as {
-        candidates?: { content?: { parts?: { text?: string }[] } }[];
+        content?: Array<{ type: string; text?: string }>;
       };
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      const text = data.content?.[0]?.text;
       if (!text) return dropOnFailure();
 
       const p = JSON.parse(text);
@@ -162,7 +163,7 @@ export async function generateSummary(
         await sleep(1000);
         continue;
       }
-      console.warn('[editorial] Gemini call threw:', (e as Error).message);
+      console.warn('[editorial] Claude call threw:', (e as Error).message);
       return dropOnFailure();
     }
   }
