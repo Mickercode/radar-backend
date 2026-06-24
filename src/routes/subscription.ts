@@ -88,7 +88,7 @@ subscriptionRouter.post(
       }),
     });
 
-    const data = await response.json();
+    const data = await response.json() as { status: boolean; data: { authorization_url: string } };
 
     if (!data.status) {
       throw new Error('Failed to initialize Paystack transaction');
