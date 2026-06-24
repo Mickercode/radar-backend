@@ -116,7 +116,7 @@ function summaryData(s: SummaryResult) {
     nonObvious: s.non_obvious, learnable: s.learnable,
     nigeriaRelevance: s.nigeria_relevance,
     summary: s.what,
-    keyTakeaways: [s.why, s.edge].filter((x) => x.length > 0),
+    keyTakeaways: s.key_takeaways,
     whyItMatters: s.why,
   };
 }

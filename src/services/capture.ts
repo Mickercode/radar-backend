@@ -17,37 +17,43 @@ export interface CapturedInsight {
 }
 
 function buildPrompt(c: ExtractedContent): string {
-  // Kept aligned with the §4A editorial prompt from ingest-content/capture-url.
-  return `You are Radar's editorial AI. Radar publishes insights in What-Why-Edge format for ambitious Nigerian / African readers.
+  return `You are Radar's editorial AI. Radar delivers sharp, non-obvious insights for ambitious Nigerian/African readers.
 
 INPUT (a URL the user wants to remember)
 URL: ${c.url}
 Title: ${c.title}
 Body: ${c.body}
 
-Produce a structured insight:
+Rules:
+- Use very simple English. Short sentences. Avoid jargon except where necessary.
+- Never repeat the same idea across sections.
+- Always include Nigerian/African context: infrastructure, power, cost, financial inclusion, regulatory environment, Nigeria's position in Africa.
 
-1) TITLE — A clean 6-10 word title (use the source's title if good; rewrite if it's clickbait or ugly).
+The four sections below must each do DIFFERENT work.
 
-2) WHAT-WHY-EDGE (PLAYBOOK §4):
-   - what: 1-2 sentences. The clear fact / claim. Plain English.
-   - why: 1-2 sentences. Why it matters, especially for a Nigerian / African reader.
-   - edge: 1 sentence. Concrete action or non-obvious takeaway. FORBIDDEN: "Stay informed", "Keep an eye on", "Be aware".
+=== STRUCTURE ===
 
-3) 10/10 TEST (§9). For each, true or false:
-   - forwardable: Would a busy reader forward this?
-   - advantage: Does this give the reader a real edge (money, knowledge, decision)?
-   - non_obvious: Would a smart reader NOT already know this?
-   - learnable: Can the reader actually apply something concrete?
+1) TITLE — A clean 6-10 word title. Use the source's title if good; rewrite if it's clickbait.
 
-4) NIGERIA RELEVANCE (0-3): 0=none, 1=tangential, 2=relevant, 3=Nigeria/Africa-specific.
+2) SUMMARY (field: "what") — What happened + key facts. 2-3 short lines. Neutral, factual.
 
-5) TIER:
-   - 1 (Must-see): >=3 of the 10/10 Tests pass AND nigeria_relevance >= 2 AND concrete edge.
-   - 2 (Strong): >=3 of the 10/10 Tests pass.
-   - 3 (Weak): <3 — flag but still return; the client decides whether to save it.
+3) KEY TAKEAWAYS (field: "key_takeaways") — 3 or 4 sharp bullet points. Mix:
+   - 1-2 real risks (cost, compliance, inequality)
+   - 1 opportunity or nuance most people miss
+   - 1 non-obvious observation
+   Each bullet: one short, specific sentence. No corporate language.
 
-OUTPUT — strict JSON only.`;
+4) WHY IT MATTERS (field: "why") — 2-3 sentences. Connect to human impact, trust, financial inclusion, systemic consequences. Not a repeat of takeaways.
+
+5) THE EDGE (field: "edge") — The most important section. Give a forward-looking or slightly contrarian view. What smart readers should think or watch for. FORBIDDEN: "Stay informed", "Keep an eye on", "Proactively assess".
+
+=== SCORING ===
+
+10/10 TEST — true/false: forwardable, advantage, non_obvious, learnable
+NIGERIA RELEVANCE (0-3)
+TIER: 1 (>=3 tests + relevance>=2 + edge), 2 (>=3 tests), 3 (<3)
+
+OUTPUT — strict JSON: { "title", "what", "key_takeaways":[], "why", "edge", "forwardable", "advantage", "non_obvious", "learnable", "nigeria_relevance", "tier" }`;
 }
 
 const clampScore = (v: unknown): 0 | 1 | 2 | 3 =>
@@ -58,8 +64,28 @@ export async function captureUrl(url: string): Promise<CapturedInsight> {
   if (!content) throw new ApiError(502, 'Could not fetch or parse that URL');
 
   const parsed = (await generateJson(buildPrompt(content), {
+    name: 'generate_insight',
+    description: 'Generate a structured insight with summary, takeaways, and analysis for a captured URL',
+    schema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        what: { type: 'string' },
+        key_takeaways: { type: 'array', items: { type: 'string' } },
+        why: { type: 'string' },
+        edge: { type: 'string' },
+        forwardable: { type: 'boolean' },
+        advantage: { type: 'boolean' },
+        non_obvious: { type: 'boolean' },
+        learnable: { type: 'boolean' },
+        nigeria_relevance: { type: 'integer', enum: [0, 1, 2, 3] },
+        tier: { type: 'integer', enum: [1, 2, 3] },
+      },
+      required: ['title', 'what', 'key_takeaways', 'why', 'edge', 'forwardable', 'advantage', 'non_obvious', 'learnable', 'nigeria_relevance', 'tier'],
+    },
+  }, {
     temperature: 0.25,
-    maxOutputTokens: 800,
+    maxOutputTokens: 1200,
   })) as Record<string, unknown>;
 
   return {

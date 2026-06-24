@@ -67,6 +67,23 @@ export async function generateQuizQuestions(insightId: string, uid: string) {
   if (!insight) throw notFound('Insight not found');
 
   const parsed = await generateJson(buildPrompt(insight), {
+    name: 'generate_quiz',
+    description: 'Generate quiz questions to test comprehension of an insight',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          question: { type: 'string' },
+          options: { type: 'array', items: { type: 'string' }, minItems: 4, maxItems: 4 },
+          correct_index: { type: 'integer', minimum: 0, maximum: 3 },
+        },
+        required: ['question', 'options', 'correct_index'],
+      },
+      minItems: 3,
+      maxItems: 3,
+    },
+  }, {
     temperature: 0.6,
     maxOutputTokens: 1200,
   });

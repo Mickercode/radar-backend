@@ -93,35 +93,38 @@ function buildAnalysisPrompt(filename: string, text: string): string {
   // Truncate text if too long (keep first 8000 chars for context)
   const truncatedText = text.length > 8000 ? text.slice(0, 8000) + '...' : text;
 
-  return `You are Radar's editorial AI. Radar publishes insights in What-Why-Edge format for ambitious Nigerian / African readers.
+  return `You are Radar's editorial AI. Radar delivers sharp, non-obvious insights for ambitious Nigerian/African readers.
 
 INPUT (a document the user wants to remember)
 Filename: ${filename}
 Document content: ${truncatedText}
 
-Produce a structured insight:
+Rules:
+- Use very simple English. Short sentences. Avoid jargon except where necessary.
+- Never repeat the same idea across sections.
+- Always include Nigerian/African context.
+
+The four sections below must each do DIFFERENT work.
+
+=== STRUCTURE ===
 
 1) TITLE — A clean 6-10 word title summarizing the document.
 
-2) WHAT-WHY-EDGE (PLAYBOOK §4):
-   - what: 1-2 sentences. The clear fact / claim. Plain English.
-   - why: 1-2 sentences. Why it matters, especially for a Nigerian / African reader.
-   - edge: 1 sentence. Concrete action or non-obvious takeaway. FORBIDDEN: "Stay informed", "Keep an eye on", "Be aware".
+2) SUMMARY (field: "what") — What the document says. 2-3 short lines. Neutral, factual.
 
-3) 10/10 TEST (§9). For each, true or false:
-   - forwardable: Would a busy reader forward this?
-   - advantage: Does this give the reader a real edge (money, knowledge, decision)?
-   - non_obvious: Would a smart reader NOT already know this?
-   - learnable: Can the reader actually apply something concrete?
+3) KEY TAKEAWAYS (field: "key_takeaways") — 3 or 4 sharp bullet points. Mix risks + opportunities + non-obvious observations.
 
-4) NIGERIA RELEVANCE (0-3): 0=none, 1=tangential, 2=relevant, 3=Nigeria/Africa-specific.
+4) WHY IT MATTERS (field: "why") — 2-3 sentences. Connect to human impact, financial inclusion, business environment, Nigeria's position.
 
-5) TIER:
-   - 1 (Must-see): >=3 of the 10/10 Tests pass AND nigeria_relevance >= 2 AND concrete edge.
-   - 2 (Strong): >=3 of the 10/10 Tests pass.
-   - 3 (Weak): <3 — flag but still return; the client decides whether to save it.
+5) THE EDGE (field: "edge") — The most important section. Give a forward-looking or contrarian view. FORBIDDEN: generic corporate language.
 
-OUTPUT — strict JSON only.`;
+=== SCORING ===
+
+10/10 TEST — true/false: forwardable, advantage, non_obvious, learnable
+NIGERIA RELEVANCE (0-3)
+TIER: 1 (>=3 tests + relevance>=2 + edge), 2 (>=3 tests), 3 (<3)
+
+OUTPUT — strict JSON: { "title", "what", "key_takeaways":[], "why", "edge", "forwardable", "advantage", "non_obvious", "learnable", "nigeria_relevance", "tier" }`;
 }
 
 const clampScore = (v: unknown): 0 | 1 | 2 | 3 =>
@@ -168,8 +171,28 @@ contentRouter.post(
 
     // Analyze with AI
     const parsed = (await generateJson(buildAnalysisPrompt(req.file.originalname || 'uploaded document', text), {
+      name: 'generate_insight',
+      description: 'Generate a structured insight from an uploaded document',
+      schema: {
+        type: 'object',
+        properties: {
+          title: { type: 'string' },
+          what: { type: 'string' },
+          key_takeaways: { type: 'array', items: { type: 'string' } },
+          why: { type: 'string' },
+          edge: { type: 'string' },
+          forwardable: { type: 'boolean' },
+          advantage: { type: 'boolean' },
+          non_obvious: { type: 'boolean' },
+          learnable: { type: 'boolean' },
+          nigeria_relevance: { type: 'integer', enum: [0, 1, 2, 3] },
+          tier: { type: 'integer', enum: [1, 2, 3] },
+        },
+        required: ['title', 'what', 'key_takeaways', 'why', 'edge', 'forwardable', 'advantage', 'non_obvious', 'learnable', 'nigeria_relevance', 'tier'],
+      },
+    }, {
       temperature: 0.25,
-      maxOutputTokens: 800,
+      maxOutputTokens: 1200,
     })) as Record<string, unknown>;
 
     // Increment upload count on success
