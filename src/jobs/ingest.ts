@@ -377,7 +377,30 @@ export async function runIngest() {
   }
 
   console.log(`[ingest] done — inserted ${total}`, stats);
+  
+  // Purge content older than 7 days to keep the feed fresh without unbounded growth.
+  try {
+    const purged = await purgeContentOlderThan(7);
+    if (purged > 0) console.log(`[ingest] purged ${purged} items older than 7 days`);
+  } catch (e) {
+    console.error('[ingest] failed to purge old content:', (e as Error).message);
+  }
+
   return { total, ...stats };
+}
+
+/**
+ * Delete content rows older than the specified number of days. Content is
+ * inserted once and never overwritten (dedup by source+title), so this keeps
+ * the database from growing unbounded while preserving at least a week of
+ * history. Cascade deletes also clean up associated summaries and key moments.
+ */
+async function purgeContentOlderThan(days: number): Promise<number> {
+  const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  const result = await prisma.content.deleteMany({
+    where: { createdAt: { lt: cutoff } },
+  });
+  return result.count;
 }
 
 /**

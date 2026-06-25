@@ -30,14 +30,17 @@ services:
         value: '*'
 
   # Ingestion worker — pulls RSS/podcasts → Claude editorial engine → feed.
-  # Runs every 6 hours. Trigger a run manually in the Render dashboard to populate now.
+  # Runs every 3 hours. Dedup by (source,title) keeps re-runs cheap — only new
+  # items hit the AI. After each run, content older than 7 days is purged so the
+  # feed stays fresh without growing unbounded. Trigger a manual run in the Render
+  # dashboard to populate now.
   # Needs ANTHROPIC_API_KEY (set via dashboard — marked sync:false) or every item
   # gets dropped silently. GOOGLE_API_KEY is optional (YouTube clip durations).
   - type: cron
     name: radar-ingest
     runtime: node
     plan: starter
-    schedule: '0 */6 * * *'
+    schedule: '0 */3 * * *'
     buildCommand: npm install --include=dev && npm run build
     startCommand: node dist/jobs/ingest.js
     envVars:
