@@ -39,6 +39,63 @@ export const NEWS_FEEDS: NewsFeed[] = [
 ];
 
 export const PODCAST_FEEDS: NewsFeed[] = [
+  // ── Climate ──────────────────────────────────────────────────────────────
+  { url: 'https://feeds.acast.com/public/shows/outrage-optimism', source: 'Outrage + Optimism', topic: 'climate' },
+  // The Energy Gang (unavailable — feeds moved to Simplecast but 404 on 3 attempts)
+  // Song Exploder (unavailable — PRX and Simplecast feeds both failed)
+  // Future U (unavailable — Simplecast feeds returned 404 and XML errors)
+  // Women Who Travel (unavailable — 3 different Megaphone/Simplecast IDs all 404)
+  { url: 'https://podcasts.files.bbci.co.uk/w13xtvb6.rss', source: 'The Climate Question', topic: 'climate' },
+
+  // ── Health ───────────────────────────────────────────────────────────────
+  { url: 'https://podcasts.files.bbci.co.uk/p002vsyw.rss', source: 'Health Check', topic: 'health' },
+  { url: 'https://feeds.buzzsprout.com/861868.rss', source: 'The Lancet Voice', topic: 'health' },
+  { url: 'https://johnshopkinssph.libsyn.com/rss', source: 'Public Health On Call', topic: 'health' },
+
+  // ── Science ──────────────────────────────────────────────────────────────
+  { url: 'https://feeds.megaphone.fm/sciencevs', source: 'Science Vs', topic: 'science' },
+  { url: 'https://rss.acast.com/nature', source: 'Nature Podcast', topic: 'science' },
+  { url: 'https://feeds.simplecast.com/h18ZIZD_', source: 'Science Friday', topic: 'science' },
+
+  // ── Technology ───────────────────────────────────────────────────────────
+  { url: 'https://feeds.simplecast.com/6HKOhNgS', source: 'Hard Fork', topic: 'tech' },
+  { url: 'https://feeds.megaphone.fm/vergecast', source: 'The Vergecast', topic: 'tech' },
+  { url: 'https://feeds.transistor.fm/acquired', source: 'Acquired', topic: 'tech' },
+
+  // ── Business & Finance ───────────────────────────────────────────────────
+  { url: 'https://www.omnycontent.com/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/8a94442e-5a74-4fa2-8b8d-ae27003a8d6b/982f5071-765c-403d-969d-ae27003a8d83/podcast.rss', source: 'Odd Lots', topic: 'finance' },
+
+  // ── Politics ─────────────────────────────────────────────────────────────
+  { url: 'https://rss.acast.com/theintelligencepodcast', source: 'The Intelligence', topic: 'politics' },
+  { url: 'https://podcasts.files.bbci.co.uk/p02nq0gn.rss', source: 'Global News Podcast', topic: 'politics' },
+
+  // ── Sports ───────────────────────────────────────────────────────────────
+  { url: 'https://podcasts.files.bbci.co.uk/p02nrsln.rss', source: 'Football Daily', topic: 'sports' },
+  { url: 'https://feeds.acast.com/public/shows/the-athletic-fc-podcast', source: 'The Athletic FC Podcast', topic: 'sports' },
+  { url: 'https://rss.art19.com/men-in-blazers', source: 'Men in Blazers', topic: 'sports' },
+
+  // ── Music ────────────────────────────────────────────────────────────────
+  { url: 'https://afrobeatsintelligence.substack.com/feed', source: 'Afrobeats Intelligence', topic: 'music' },
+
+  // ── Film & TV ────────────────────────────────────────────────────────────
+  { url: 'https://feeds.megaphone.fm/thebigpicture', source: 'The Big Picture', topic: 'film' },
+  { url: 'https://feeds.megaphone.fm/PMC7846561481', source: 'IndieWire Screen Talk', topic: 'film' },
+  { url: 'https://scriptnotes.libsyn.com/rss', source: 'Scriptnotes', topic: 'film' },
+
+  // ── Education ────────────────────────────────────────────────────────────
+  { url: 'https://feeds.soundcloud.com/users/soundcloud:users:144948831/sounds.rss', source: 'The EdSurge Podcast', topic: 'education' },
+  { url: 'https://www.educationnext.org/feed/', source: 'Education Next', topic: 'education' },
+
+  // ── Fashion & Travel ─────────────────────────────────────────────────────
+  { url: 'https://feeds.acast.com/public/shows/the-business-of-fashion-podcast', source: 'The Business of Fashion Podcast', topic: 'fashion' },
+  { url: 'https://feeds.megaphone.fm/ZTTIA6764283121', source: 'Zero To Travel', topic: 'travel' },
+
+  // ── Faith & Philosophy ───────────────────────────────────────────────────
+  { url: 'https://feeds.megaphone.fm/QCD6036500916', source: 'Philosophize This!', topic: 'faith' },
+  { url: 'https://feeds.soundcloud.com/users/soundcloud:users:19642636/sounds.rss', source: 'On Being', topic: 'faith' },
+  { url: 'https://partiallyexaminedlife.libsyn.com/rss', source: 'The Partially Examined Life', topic: 'faith' },
+
+  // ── Existing feeds kept for continuity ───────────────────────────────────
   { url: 'https://lexfridman.com/feed/podcast/', source: 'Lex Fridman Podcast', topic: 'ai' },
   { url: 'https://feeds.megaphone.fm/hubermanlab', source: 'Huberman Lab', topic: 'health' },
   { url: 'https://feeds.npr.org/510289/podcast.xml', source: 'Planet Money', topic: 'finance' },
@@ -66,12 +123,12 @@ export const YOUTUBE_CHANNELS: YoutubeChannel[] = [
 // not front-loaded from one outlet. Dedup makes re-runs cheap (only new items
 // hit the AI), so there's no daily cap — the feed grows and stays fresh.
 export const TARGET_NEWS = 40;
-export const TARGET_PODCASTS = 12;
+export const TARGET_PODCASTS = 20;
 export const TARGET_CLIPS = 12;
 
 // How many recent items to pull from each source as candidates.
 export const PER_NEWS_FEED = 12;
-export const PER_PODCAST_FEED = 6;
+export const PER_PODCAST_FEED = 3;
 export const PER_YOUTUBE_CHANNEL = 10;
 
 export const MIN_PODCAST_DURATION_SEC = 300;

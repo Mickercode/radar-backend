@@ -16,6 +16,8 @@ const schema = z.object({
   GOOGLE_API_KEY: z.string().optional(),
   PAYSTACK_SECRET_KEY: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
+  PODCAST_INDEX_API_KEY: z.string().optional(),
+  PODCAST_INDEX_API_SECRET: z.string().optional(),
   // The "from" address for all Radar emails. Defaults to the Resend test domain.
   // Once your domain is verified on Resend, change this to something like
   // 'Radar <radar@yourdomain.com>'.
