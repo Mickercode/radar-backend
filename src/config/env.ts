@@ -12,6 +12,16 @@ const schema = z.object({
   APP_JWT_SECRET: z.string().min(16, 'APP_JWT_SECRET must be at least 16 chars'),
   ANTHROPIC_API_KEY: z.string().optional(),
   VOYAGE_API_KEY: z.string().optional(),
+  GEMINI_API_KEY: z.string().optional(),
+  GOOGLE_API_KEY: z.string().optional(),
+  PAYSTACK_SECRET_KEY: z.string().optional(),
+  RESEND_API_KEY: z.string().optional(),
+  // The "from" address for all Radar emails. Defaults to the Resend test domain.
+  // Once your domain is verified on Resend, change this to something like
+  // 'Radar <radar@yourdomain.com>'.
+  EMAIL_FROM: z.string().default('Radar <onboarding@resend.dev>'),
+  // Public-facing URL of the app for links in emails (e.g. password reset).
+  APP_URL: z.string().default('http://localhost:5173'),
 });
 
 const parsed = schema.safeParse(process.env);

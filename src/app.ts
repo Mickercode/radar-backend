@@ -13,6 +13,7 @@ import { pushRouter } from './routes/push';
 import { reviewsRouter } from './routes/reviews';
 import { subscriptionRouter } from './routes/subscription';
 import { weeklyRouter } from './routes/weekly';
+import { knowledgeWebRouter } from './routes/knowledge-web';
 import { captureRouter } from './routes/capture';
 import { errorHandler, notFoundHandler } from './middleware/error';
 
@@ -46,6 +47,7 @@ export function createApp() {
   app.use('/reviews', reviewsRouter);
   app.use('/push', pushRouter);
   app.use('/subscription', subscriptionRouter);
+  app.use('/knowledge-web', knowledgeWebRouter);
   app.use(weeklyRouter);
   // AI pipeline: /capture (quiz generation + embedding auto-link live under
   // /insights). Needs GEMINI_API_KEY; routes 503 cleanly without it.

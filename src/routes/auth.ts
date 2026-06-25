@@ -6,6 +6,7 @@ import { hashPassword, verifyPassword } from '../lib/password';
 import { signAuthToken } from '../lib/jwt';
 import { asyncHandler, conflict, unauthorized, badRequest } from '../lib/http';
 import { requireAuth, userId } from '../middleware/auth';
+import { sendWelcomeEmail, sendResetPasswordEmail } from '../lib/email';
 import crypto from 'crypto';
 
 export const authRouter = Router();
@@ -45,6 +46,10 @@ authRouter.post(
     });
 
     const token = signAuthToken(user.id, user.email);
+
+    // Send welcome email (best-effort, never blocks signup)
+    sendWelcomeEmail(user.email, user.name);
+
     res.status(201).json({ token, user: publicUser(user) });
   }),
 );
@@ -150,10 +155,8 @@ authRouter.post(
       data: { userId: user.id, token, expiresAt },
     });
 
-    // TODO: Send email with reset link
-    // In production, integrate with an email service (SendGrid, AWS SES, etc.)
-    // The reset link should be: https://yourapp.com/reset-password?token=${token}
-    console.log(`[Password Reset] Token for ${email}: ${token}`);
+    // Send password-reset email (best-effort)
+    sendResetPasswordEmail(user.email, token);
 
     res.json({ ok: true });
   }),

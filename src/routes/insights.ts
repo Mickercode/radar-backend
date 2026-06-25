@@ -12,6 +12,7 @@ import {
 import { dueDateAfter, intervalDaysForStep } from '../services/srs';
 import { generateQuizQuestions } from '../services/quiz';
 import { autolinkInsight } from '../services/autolink';
+import { sendCaptureConfirmationEmail } from '../lib/email';
 
 // Knowledge graph (PLAYBOOK §4B) + quiz (§3). All routes require auth and are
 // scoped to the JWT user id. Ported from the app's old services/api.ts.
@@ -61,6 +62,27 @@ insightsRouter.post(
       });
       return created;
     });
+
+    // Send capture confirmation email if the user has email notifications enabled
+    // and this insight came from a captured URL (has a sourceContentId).
+    (async () => {
+      try {
+        const prefs = await prisma.userPreferences.findUnique({ where: { userId: uid } });
+        if (prefs?.notificationsEnabled && insight.sourceContentId) {
+          const user = await prisma.appUser.findUnique({ where: { id: uid }, select: { email: true } });
+          if (user) {
+            await sendCaptureConfirmationEmail(user.email, {
+              title: insight.title,
+              what: insight.what,
+              why: insight.why,
+              edge: insight.edge,
+            });
+          }
+        }
+      } catch {
+        // Best-effort — email failure should never block the response.
+      }
+    })();
 
     res.status(201).json(toInsight(insight));
   }),

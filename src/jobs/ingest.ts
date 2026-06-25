@@ -17,6 +17,7 @@ import {
   YOUTUBE_CHANNELS,
 } from './feeds';
 import { generateSummary, type SummaryResult } from './editorial';
+import { sendIngestDigest } from '../lib/email';
 
 // Radar ingestion worker. Pulls RSS (news + podcasts) + YouTube clips, scores
 // them through the Claude editorial engine, and writes publishable rows (Tier
@@ -365,8 +366,63 @@ export async function runIngest() {
   await ingestClips(stats, { left: TARGET_CLIPS });
 
   const total = stats.news + stats.podcasts + stats.clips;
+
+  // After ingest, send a digest email to users who opted in
+  if (total > 0) {
+    try {
+      await sendIngestDigestsToUsers(prisma);
+    } catch (e) {
+      console.error('[ingest] failed to send digest emails:', (e as Error).message);
+    }
+  }
+
   console.log(`[ingest] done — inserted ${total}`, stats);
   return { total, ...stats };
+}
+
+/**
+ * After an ingest run, send digest emails to users who have email notifications
+ * enabled. Collects the most recent content items matching each user's topic
+ * preferences and sends a digest via Resend.
+ */
+async function sendIngestDigestsToUsers(prismaClient: PrismaClient): Promise<void> {
+  const users = await prismaClient.appUser.findMany({
+    where: { preferences: { notificationsEnabled: true } },
+    select: { id: true, email: true, name: true, preferences: { select: { topicIds: true } } },
+  });
+
+  if (users.length === 0) {
+    console.log('[ingest] no users with email notifications enabled — skipping digest');
+    return;
+  }
+
+  // Get content created in the last 24 hours
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const recentContent = await prismaClient.content.findMany({
+    where: { createdAt: { gte: since } },
+    select: { id: true, title: true, type: true, source: true, articleUrl: true, topicId: true },
+    orderBy: { createdAt: 'desc' },
+    take: 50,
+  });
+
+  if (recentContent.length === 0) return;
+
+  for (const user of users) {
+    const topicIds = new Set(user.preferences?.topicIds ?? []);
+    // If user has topic preferences, only include matching content; otherwise include all
+    const matching = topicIds.size > 0
+      ? recentContent.filter((c) => c.topicId && topicIds.has(c.topicId))
+      : recentContent;
+
+    if (matching.length === 0) continue;
+
+    await sendIngestDigest(
+      user.email,
+      matching.map((c) => ({ title: c.title, type: c.type, source: c.source, articleUrl: c.articleUrl })),
+    );
+  }
+
+  console.log(`[ingest] digest emails sent to ${users.filter((u) => u.preferences?.topicIds?.length).length || users.length} users`);
 }
 
 if (require.main === module) {
