@@ -1,0 +1,583 @@
+/* ═══════════════════════════════════════════════
+   Radar PWA — Global Styles
+   Design tokens, base resets, typography, layout,
+   components, and the PWA install prompt.
+   ═══════════════════════════════════════════════ */
+
+/* ── Design Tokens ───────────────────────────── */
+:root {
+  --bg: #1a1a2e;
+  --bg-1: #16213e;
+  --bg-2: #222a44;
+  --bg-card: #1e2438;
+  --bg-hover: #28304c;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --text: #f7f7f9;
+  --text-dim: #8892a4;
+  --text-faint: #5a6378;
+  --cyan: #00c2cb;
+  --lime: #45d483;
+  --amber: #f2b441;
+  --coral: #fb7185;
+  --accent: var(--cyan);
+  --accent-glow: rgba(0, 194, 203, 0.32);
+  --tier-1: var(--amber);
+  --tier-2: var(--cyan);
+  --tier-3: var(--text-faint);
+
+  /* Typography */
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-mono: 'DM Sans', system-ui, sans-serif;
+  --font-body: 'DM Sans', system-ui, sans-serif;
+
+  /* Fluid type scale */
+  --step--1: clamp(0.78rem, 0.74rem + 0.2vw, 0.86rem);
+  --step-0: clamp(0.94rem, 0.9rem + 0.2vw, 1rem);
+  --step-1: clamp(1.13rem, 1.05rem + 0.4vw, 1.3rem);
+  --step-2: clamp(1.4rem, 1.25rem + 0.7vw, 1.8rem);
+  --step-3: clamp(1.9rem, 1.6rem + 1.5vw, 2.8rem);
+  --step-4: clamp(2.6rem, 2rem + 3vw, 4.2rem);
+
+  /* Spacing & radii */
+  --r-sm: 8px;
+  --r: 14px;
+  --r-lg: 20px;
+  --r-pill: 999px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --t-fast: 0.15s var(--ease);
+  --t: 0.25s var(--ease);
+  --nav-h: 60px;
+  --tab-h: 64px;
+}
+
+/* ── Reset ──────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: var(--step-0);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+/* Ambient background glow */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: -1;
+  background:
+    radial-gradient(60vw 60vw at 12% -10%, rgba(0, 194, 203, 0.08), transparent 60%),
+    radial-gradient(55vw 55vw at 100% 0%, rgba(22, 33, 62, 0.6), transparent 55%),
+    radial-gradient(60vw 60vw at 50% 120%, rgba(0, 194, 203, 0.05), transparent 60%);
+  pointer-events: none;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+::selection {
+  background: var(--accent-glow);
+  color: #fff;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+
+/* ── Keyframes ──────────────────────────────── */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Shell Layout ───────────────────────────── */
+.shell {
+  min-height: 100dvh;
+}
+
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  height: var(--nav-h);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-inline: clamp(1rem, 4vw, 2rem);
+  background: rgba(8, 8, 10, 0.6);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav__brand {
+  display: flex;
+  align-items: center;
+}
+
+.nav__logo {
+  height: 52px;
+  width: auto;
+  display: block;
+}
+
+.nav__spacer {
+  margin-left: auto;
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border);
+  background: var(--bg-1);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: color var(--t-fast), border-color var(--t-fast), transform var(--t-fast);
+}
+
+.icon-btn:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+}
+
+.shell__main {
+  padding-block: clamp(1.25rem, 4vw, 2.5rem);
+  padding-bottom: calc(72px + env(safe-area-inset-bottom) + 2rem);
+}
+
+/* ── Bottom Dock ────────────────────────────── */
+.dock {
+  position: fixed;
+  left: 50%;
+  transform: translate(-50%);
+  bottom: calc(env(safe-area-inset-bottom) + 14px);
+  z-index: 50;
+  width: min(440px, calc(100% - 28px));
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 2px;
+  padding: 7px;
+  background: rgba(16, 16, 20, 0.82);
+  backdrop-filter: blur(20px) saturate(1.3);
+  -webkit-backdrop-filter: blur(20px) saturate(1.3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-pill);
+  box-shadow: 0 16px 44px -12px rgba(0, 0, 0, 0.7), inset 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.dock__item {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  height: 48px;
+  border-radius: 14px;
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+  font-size: 0.52rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: color var(--t-fast), background var(--t-fast);
+}
+
+.dock__item:hover {
+  color: var(--text-dim);
+}
+
+.dock__item.is-active {
+  color: var(--cyan);
+  background: rgba(34, 211, 238, 0.1);
+}
+
+.dock__item span {
+  line-height: 1;
+}
+
+/* ── PWA Install Banner ───────────────────────
+   ═══════════════════════════════════════════════
+   CRITICAL: This banner must be VISIBLE and
+   CENTER-ALIGNED on mobile so users can install
+   the PWA. Fixed position, high z-index, full-
+   width on small screens, above the dock.
+   ════════════════════════════════════════════ */
+.pwa-install {
+  position: fixed;
+  left: 50%;
+  transform: translate(-50%);
+  bottom: calc(env(safe-area-inset-bottom) + 90px);
+  z-index: 55;
+  width: min(420px, calc(100% - 24px));
+  max-width: calc(100vw - 24px);
+  animation: rise 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  pointer-events: auto;
+}
+
+.pwa-install__body {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.75rem 0.85rem;
+  background: rgba(18, 18, 22, 0.96);
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r);
+  box-shadow:
+    0 14px 36px -12px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(0, 194, 203, 0.15);
+  font-size: var(--step--1);
+  line-height: 1.35;
+}
+
+.pwa-install__body svg {
+  color: var(--cyan);
+  flex: none;
+}
+
+.pwa-install__body span {
+  flex: 1;
+  min-width: 0;
+}
+
+.pwa-install__body strong {
+  color: var(--text);
+}
+
+/* Install action button */
+.pwa-install__btn {
+  flex: none;
+  height: 38px;
+  padding-inline: 1rem;
+  font-size: var(--step--1);
+  font-weight: 600;
+  background: linear-gradient(100deg, var(--cyan), #36e0d0);
+  border: none;
+  border-radius: var(--r-pill);
+  color: #04141a;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: transform var(--t-fast), box-shadow var(--t-fast);
+  white-space: nowrap;
+}
+
+.pwa-install__btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px -6px var(--accent-glow);
+}
+
+.pwa-install__btn:active {
+  transform: translateY(0);
+}
+
+/* Dismiss (X) button */
+.pwa-install__close {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  border-radius: 50%;
+  transition: color var(--t-fast), background var(--t-fast);
+}
+
+.pwa-install__close:hover {
+  color: var(--text);
+  background: var(--bg-2);
+}
+
+/* ── Mobile overrides ─────────────────────── */
+@media (max-width: 480px) {
+  .pwa-install {
+    width: calc(100vw - 16px);
+    max-width: calc(100vw - 16px);
+    bottom: calc(env(safe-area-inset-bottom) + 95px);
+    z-index: 55;
+  }
+
+  .pwa-install__body {
+    font-size: 0.78rem;
+    padding: 0.65rem 0.6rem;
+    gap: 0.45rem;
+  }
+
+  .pwa-install__btn {
+    height: 34px;
+    padding-inline: 0.75rem;
+    font-size: 0.72rem;
+  }
+
+  .pwa-install__close {
+    width: 30px;
+    height: 30px;
+  }
+}
+
+/* ── Utility Classes ───────────────────────── */
+.container {
+  width: 100%;
+  max-width: 1100px;
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 4vw, 2rem);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 48px;
+  padding-inline: 1.4rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-pill);
+  background: var(--bg-2);
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform var(--t-fast), border-color var(--t-fast), background var(--t-fast), box-shadow var(--t-fast);
+  user-select: none;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn--primary {
+  background: linear-gradient(100deg, var(--cyan), #36e0d0);
+  border-color: transparent;
+  color: #04141a;
+  box-shadow: 0 6px 24px -8px var(--accent-glow);
+}
+
+.btn--primary:hover {
+  box-shadow: 0 10px 30px -6px var(--accent-glow);
+  border-color: transparent;
+}
+
+.page-head {
+  margin-bottom: 1.5rem;
+}
+
+.page-kicker {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cyan);
+}
+
+.page-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--step-3);
+  letter-spacing: -0.02em;
+  margin-top: 0.25rem;
+}
+
+.empty {
+  display: grid;
+  place-items: center;
+  text-align: center;
+  min-height: 40vh;
+  gap: 0.5rem;
+  color: var(--text-dim);
+}
+
+.empty h3 {
+  font-family: var(--font-display);
+  color: var(--text);
+  font-size: var(--step-1);
+}
+
+/* ── Install Card (Settings page) ────────── */
+.install-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding: 1.5rem 1.25rem;
+  background: var(--bg-card);
+  border: 1px solid rgba(0, 194, 203, 0.28);
+  border-radius: var(--r-lg);
+  box-shadow:
+    0 0 0 1px rgba(0, 194, 203, 0.08),
+    0 8px 24px -8px rgba(0, 0, 0, 0.5);
+}
+
+.install-card__icon {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r);
+  background: linear-gradient(135deg, rgba(0, 194, 203, 0.18), rgba(54, 224, 208, 0.08));
+  color: var(--cyan);
+  flex: none;
+}
+
+.install-card__text h3 {
+  font-family: var(--font-display);
+  font-size: var(--step-1);
+  color: var(--text);
+  margin-bottom: 0.35rem;
+}
+
+.install-card__text p {
+  font-size: var(--step--1);
+  color: var(--text-dim);
+  line-height: 1.5;
+  max-width: 28ch;
+  margin-inline: auto;
+}
+
+.install-card__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 48px;
+  padding-inline: 1.75rem;
+  background: linear-gradient(100deg, var(--cyan), #36e0d0);
+  border: none;
+  border-radius: var(--r-pill);
+  color: #04141a;
+  font-size: var(--step-0);
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform var(--t-fast), box-shadow var(--t-fast);
+  width: 100%;
+  max-width: 280px;
+}
+
+.install-card__btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -8px var(--accent-glow);
+}
+
+.install-card__btn:active {
+  transform: translateY(0);
+}
+
+.install-card__ios {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  font-size: var(--step--1);
+  color: var(--text-dim);
+  background: var(--bg-2);
+  border-radius: var(--r);
+  padding: 0.65rem 1rem;
+  width: 100%;
+}
+
+.install-card__ios strong {
+  color: var(--text);
+}
+
+.install-card__ios svg {
+  color: var(--cyan);
+}
+
+.install-card__hint {
+  font-size: var(--step--1);
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.install-card__hint strong {
+  color: var(--text);
+}
+
+/* ── Reduced motion ────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
