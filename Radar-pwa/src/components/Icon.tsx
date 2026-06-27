@@ -134,10 +134,11 @@ export type IconName = keyof typeof icons;
 
 interface IconProps extends SVGProps<SVGSVGElement> {
   name: IconName;
+  size?: number;
 }
 
-export function Icon({ name, ...props }: IconProps) {
+export function Icon({ name, size, ...props }: IconProps) {
   const renderIcon = icons[name];
   if (!renderIcon) return null;
-  return renderIcon(props);
+  return renderIcon({ width: size, height: size, ...props });
 }
