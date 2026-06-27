@@ -51,6 +51,7 @@ Body: ${body}
 Source topic: ${topic}
 
 Rules:
+- Write in plain, natural prose. NO dashes, NO bullet points, NO markdown, NO asterisks in any field except key_takeaways.
 - Use very simple English. Short sentences. Avoid jargon except where necessary (fintech, compliance, data sovereignty).
 - Never repeat the same idea across sections.
 - Always include Nigerian/African context: infrastructure reality, power problems, cost of business, financial inclusion, history of regulatory surprises, Nigeria's position in Africa.
@@ -60,25 +61,17 @@ Write exactly 4 sections per the structure below, then score and tier.
 
 === STRUCTURE ===
 
-1) SUMMARY (field: "what") — What happened + key facts. 2-3 short lines. Just the facts, neutral tone.
+1) SUMMARY (field: "what") — What happened and the key facts. Write 2-3 sentences of plain prose. Read like a newspaper lead, not a list. Neutral tone. No dashes, no bullets.
 
-2) KEY TAKEAWAYS (field: "key_takeaways") — 3 or 4 sharp bullet points. Mix:
+2) KEY TAKEAWAYS (field: "key_takeaways") — Array of 3 or 4 items. Mix:
    - 1-2 real risks (cost, compliance burden, inequality effects)
    - 1 opportunity or nuance most people miss
    - 1 non-obvious observation (second-order effect)
-   Each bullet: one short, specific sentence. No corporate language.
+   Each item: one complete, specific sentence. No leading dash, no bullet symbol, no numbering. Just the sentence.
 
-3) WHY IT MATTERS (field: "why") — Go deeper. 2-3 sentences. Connect to:
-   - Real human impact on Nigerian users, small businesses, everyday people
-   - Trust, financial inclusion, systemic consequences
-   - Nigeria's position in Africa and global trends
-   Not a repeat of the takeaways. Zoom out.
+3) WHY IT MATTERS (field: "why") — Write 2-3 sentences of flowing prose. Connect to real human impact on Nigerian users, small businesses, everyday people, trust, financial inclusion, systemic consequences, Nigeria's position in Africa and global trends. Not a repeat of the takeaways. Zoom out. No dashes, no bullets.
 
-4) THE EDGE (field: "edge") — This is the most important section. 2 sentences. Give:
-   - A forward-looking or slightly contrarian view
-   - What smart readers should actually think or watch for
-   - A strategic insight that feels unique and valuable
-   FORBIDDEN: "Stay informed", "Keep an eye on", "Be aware", "Proactively assess", "Mitigate risks"
+4) THE EDGE (field: "edge") — The most important section. Write exactly 2 sentences of plain prose. Give a forward-looking or slightly contrarian view — what smart readers should actually think or watch for. A strategic insight that feels unique and valuable. No dashes, no bullets. FORBIDDEN words/phrases: "Stay informed", "Keep an eye on", "Be aware", "Proactively assess", "Mitigate risks".
 
 === SCORING ===
 
@@ -185,12 +178,13 @@ export async function generateSummary(
       const tier = (p.tier === 1 || p.tier === 2 ? p.tier : 3) as 1 | 2 | 3;
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       const raw = Array.isArray(p.key_takeaways) ? p.key_takeaways.filter((k: unknown) => typeof k === 'string') : [];
+      const stripDash = (s: string) => s.trim().replace(/^[-•*]\s*/, '');
       return {
         relevant: p.relevant !== false,
-        what: String(p.what).trim(),
-        key_takeaways: raw.length >= 2 ? raw : [String(p.what).trim(), String(p.why).trim()],
-        why: String(p.why).trim(),
-        edge: String(p.edge).trim(),
+        what: stripDash(String(p.what)),
+        key_takeaways: raw.length >= 2 ? raw.map(stripDash) : [stripDash(String(p.what)), stripDash(String(p.why))],
+        why: stripDash(String(p.why)),
+        edge: stripDash(String(p.edge)),
         forwardable: !!p.forwardable,
         advantage: !!p.advantage,
         non_obvious: !!p.non_obvious,

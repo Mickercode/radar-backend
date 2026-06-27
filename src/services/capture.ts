@@ -25,6 +25,7 @@ Title: ${c.title}
 Body: ${c.body}
 
 Rules:
+- Write in plain, natural prose. NO dashes, NO bullet points, NO markdown, NO asterisks in any field except key_takeaways.
 - Use very simple English. Short sentences. Avoid jargon except where necessary.
 - Never repeat the same idea across sections.
 - Always include Nigerian/African context: infrastructure, power, cost, financial inclusion, regulatory environment, Nigeria's position in Africa.
@@ -35,17 +36,17 @@ The four sections below must each do DIFFERENT work.
 
 1) TITLE — A clean 6-10 word title. Use the source's title if good; rewrite if it's clickbait.
 
-2) SUMMARY (field: "what") — What happened + key facts. 2-3 short lines. Neutral, factual.
+2) SUMMARY (field: "what") — Write 2-3 sentences of plain prose. State what happened and the key facts. Read like a newspaper lead, not a list. Neutral, factual. No dashes, no bullets.
 
-3) KEY TAKEAWAYS (field: "key_takeaways") — 3 or 4 sharp bullet points. Mix:
+3) KEY TAKEAWAYS (field: "key_takeaways") — Array of 3 or 4 items. Mix:
    - 1-2 real risks (cost, compliance, inequality)
    - 1 opportunity or nuance most people miss
    - 1 non-obvious observation
-   Each bullet: one short, specific sentence. No corporate language.
+   Each item: one complete, specific sentence. No leading dash, no bullet symbol, no numbering. Just the sentence.
 
-4) WHY IT MATTERS (field: "why") — 2-3 sentences. Connect to human impact, trust, financial inclusion, systemic consequences. Not a repeat of takeaways.
+4) WHY IT MATTERS (field: "why") — Write 2-3 sentences of flowing prose. Connect to human impact, trust, financial inclusion, systemic consequences. Not a repeat of takeaways. No dashes, no bullets.
 
-5) THE EDGE (field: "edge") — The most important section. Give a forward-looking or slightly contrarian view. What smart readers should think or watch for. FORBIDDEN: "Stay informed", "Keep an eye on", "Proactively assess".
+5) THE EDGE (field: "edge") — The most important section. Write exactly 2 sentences of plain prose. Give a forward-looking or slightly contrarian view. What smart readers should think or watch for. No dashes, no bullets. FORBIDDEN: "Stay informed", "Keep an eye on", "Proactively assess".
 
 === SCORING ===
 
