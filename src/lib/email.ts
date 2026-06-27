@@ -203,6 +203,30 @@ function captureConfirmationHtml(insight: { title: string; what: string; why: st
   `, 'Saved to your Brain');
 }
 
+// ── OTP verification email ────────────────────────────────────────────────────
+
+function otpHtml(otp: string, name?: string): string {
+  const greeting = name ? `Hey ${name},` : 'Hey there,';
+  return layout(`
+    <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#f7f7f9;">
+      Verify your email
+    </h1>
+    <p style="margin:0 0 12px;color:#8892a4;line-height:1.6;">${greeting}</p>
+    <p style="margin:0 0 20px;color:#8892a4;line-height:1.6;">
+      Enter this code in the Radar app to finish creating your account.
+      The code expires in <strong style="color:#f7f7f9;">10 minutes</strong>.
+    </p>
+    <div style="text-align:center;margin:24px 0;">
+      <div style="display:inline-block;background:#0d1117;border:2px solid #00c2cb;border-radius:14px;padding:18px 36px;">
+        <span style="font-size:36px;font-weight:800;letter-spacing:0.18em;color:#00c2cb;font-family:monospace;">${otp}</span>
+      </div>
+    </div>
+    <p style="margin:0;color:#5a6378;font-size:13px;text-align:center;line-height:1.5;">
+      If you didn't try to sign up for Radar, you can safely ignore this email.
+    </p>
+  `, 'Verify your Radar account');
+}
+
 // ── Public send helpers ────────────────────────────────────────────────────────
 
 /** Sends a welcome email to a newly registered user. Best-effort (never throws). */
@@ -288,5 +312,25 @@ export async function sendIngestDigest(
     console.log(`[email] ingest digest sent to ${email} (${items.length} items)`);
   } catch (e) {
     console.error(`[email] failed to send ingest digest to ${email}:`, (e as Error).message);
+  }
+}
+
+/** Sends a 6-digit OTP for email verification during signup. Best-effort (never throws). */
+export async function sendOtpEmail(email: string, otp: string, name?: string): Promise<void> {
+  const c = client();
+  if (!c) {
+    console.log(`[email] RESEND_API_KEY not set — OTP for ${email} is: ${otp}`);
+    return;
+  }
+  try {
+    await c.emails.send({
+      from: FROM,
+      to: email,
+      subject: `${otp} — your Radar verification code`,
+      html: otpHtml(otp, name),
+    });
+    console.log(`[email] OTP sent to ${email}`);
+  } catch (e) {
+    console.error(`[email] failed to send OTP to ${email}:`, (e as Error).message);
   }
 }

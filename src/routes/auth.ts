@@ -6,15 +6,17 @@ import { hashPassword, verifyPassword } from '../lib/password';
 import { signAuthToken } from '../lib/jwt';
 import { asyncHandler, conflict, unauthorized, badRequest } from '../lib/http';
 import { requireAuth, userId } from '../middleware/auth';
-import { sendWelcomeEmail, sendResetPasswordEmail } from '../lib/email';
+import { sendWelcomeEmail, sendResetPasswordEmail, sendOtpEmail } from '../lib/email';
 import crypto from 'crypto';
 
 export const authRouter = Router();
 
-// Public user shape returned to the app — never leaks password_hash.
-// Matches the app's `AuthUser` interface ({ id, email, name }).
 function publicUser(u: AppUser) {
   return { id: u.id, email: u.email, name: u.name };
+}
+
+function generateOtp(): string {
+  return String(crypto.randomInt(100_000, 999_999));
 }
 
 const credentials = z.object({
@@ -27,11 +29,10 @@ const signupBody = credentials.extend({
   name: z.string().trim().min(1).optional(),
 });
 
-// Generic message for both "no such user" and "wrong password" so we don't
-// leak which emails are registered (carried over from the old auth-login fn).
 const INVALID = 'Invalid email or password.';
 
-// POST /auth/signup → { token, user }
+// ── POST /auth/signup → { pendingEmail }
+// Validates, hashes password, stores as PendingSignup, sends OTP.
 authRouter.post(
   '/signup',
   asyncHandler(async (req, res) => {
@@ -41,76 +42,125 @@ authRouter.post(
     if (existing) throw conflict('An account with this email already exists.');
 
     const passwordHash = await hashPassword(password);
-    const user = await prisma.appUser.create({
-      data: { email, passwordHash, name: name ?? null },
+    const otp = generateOtp();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Upsert PendingSignup — allows resend without duplicates
+    await prisma.pendingSignup.upsert({
+      where: { email },
+      create: { email, passwordHash, name: name ?? null, otp, expiresAt },
+      update: { passwordHash, name: name ?? null, otp, expiresAt },
     });
 
-    const token = signAuthToken(user.id, user.email);
+    sendOtpEmail(email, otp, name);
 
-    // Send welcome email (best-effort, never blocks signup)
+    res.status(202).json({ pendingEmail: email });
+  }),
+);
+
+// ── POST /auth/verify-otp { email, otp } → { token, user }
+// Verifies OTP, creates account, returns JWT.
+authRouter.post(
+  '/verify-otp',
+  asyncHandler(async (req, res) => {
+    const { email, otp } = z
+      .object({
+        email: z.string().trim().toLowerCase().email(),
+        otp: z.string().length(6),
+      })
+      .parse(req.body);
+
+    const pending = await prisma.pendingSignup.findUnique({ where: { email } });
+
+    if (!pending) throw badRequest('No pending signup found. Please sign up again.');
+    if (pending.otp !== otp) throw badRequest('Incorrect code. Please try again.');
+    if (pending.expiresAt < new Date()) {
+      await prisma.pendingSignup.delete({ where: { email } });
+      throw badRequest('Code has expired. Please sign up again.');
+    }
+
+    // Double-check the email wasn't claimed while OTP was in flight
+    const existing = await prisma.appUser.findUnique({ where: { email } });
+    if (existing) {
+      await prisma.pendingSignup.delete({ where: { email } });
+      throw conflict('An account with this email already exists.');
+    }
+
+    const user = await prisma.appUser.create({
+      data: { email, passwordHash: pending.passwordHash, name: pending.name },
+    });
+
+    await prisma.pendingSignup.delete({ where: { email } });
+
+    const token = signAuthToken(user.id, user.email);
     sendWelcomeEmail(user.email, user.name);
 
     res.status(201).json({ token, user: publicUser(user) });
   }),
 );
 
-// POST /auth/login → { token, user }
+// ── POST /auth/resend-otp { email } → { ok: true }
+authRouter.post(
+  '/resend-otp',
+  asyncHandler(async (req, res) => {
+    const { email } = z.object({ email: z.string().trim().toLowerCase().email() }).parse(req.body);
+
+    const pending = await prisma.pendingSignup.findUnique({ where: { email } });
+    if (!pending) throw badRequest('No pending signup found. Please sign up again.');
+
+    const otp = generateOtp();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+    await prisma.pendingSignup.update({ where: { email }, data: { otp, expiresAt } });
+    sendOtpEmail(email, otp, pending.name ?? undefined);
+
+    res.json({ ok: true });
+  }),
+);
+
+// ── POST /auth/login → { token, user }
 authRouter.post(
   '/login',
   asyncHandler(async (req, res) => {
     const { email, password } = credentials.parse(req.body);
-
     const user = await prisma.appUser.findUnique({ where: { email } });
     if (!user) throw unauthorized(INVALID);
-
     const ok = await verifyPassword(password, user.passwordHash);
     if (!ok) throw unauthorized(INVALID);
-
     const token = signAuthToken(user.id, user.email);
     res.json({ token, user: publicUser(user) });
   }),
 );
 
-// PATCH /auth/name → { user }   (authenticated)
+// ── PATCH /auth/name → { user }   (authenticated)
 authRouter.patch(
   '/name',
   requireAuth,
   asyncHandler(async (req, res) => {
     const { name } = z.object({ name: z.string().trim().min(1, 'Name is required') }).parse(req.body);
-    const user = await prisma.appUser.update({
-      where: { id: userId(req) },
-      data: { name },
-    });
+    const user = await prisma.appUser.update({ where: { id: userId(req) }, data: { name } });
     res.json({ user: publicUser(user) });
   }),
 );
 
-// PATCH /auth/password → { ok: true }   (authenticated)
+// ── PATCH /auth/password → { ok: true }   (authenticated)
 authRouter.patch(
   '/password',
   requireAuth,
   asyncHandler(async (req, res) => {
     const { currentPassword, newPassword } = z
       .object({
-        currentPassword: z.string().optional(),
+        currentPassword: z.string().min(1, 'Current password is required'),
         newPassword: z.string().min(6, 'Password must be at least 6 characters'),
       })
       .parse(req.body);
 
     const uid = userId(req);
     const user = await prisma.appUser.findUnique({ where: { id: uid } });
+    if (!user) throw unauthorized('User not found');
 
-    if (!user) {
-      throw unauthorized('User not found');
-    }
-
-    // If currentPassword is provided, verify it before allowing change
-    if (currentPassword) {
-      const isValid = await verifyPassword(currentPassword, user.passwordHash);
-      if (!isValid) {
-        throw unauthorized('Current password is incorrect');
-      }
-    }
+    const isValid = await verifyPassword(currentPassword, user.passwordHash);
+    if (!isValid) throw unauthorized('Current password is incorrect');
 
     const passwordHash = await hashPassword(newPassword);
     await prisma.appUser.update({ where: { id: uid }, data: { passwordHash } });
@@ -118,8 +168,7 @@ authRouter.patch(
   }),
 );
 
-// DELETE /auth/account → { ok: true }   (authenticated)
-// Cascades remove all the user's saved items, insights, reviews, etc.
+// ── DELETE /auth/account → { ok: true }   (authenticated)
 authRouter.delete(
   '/account',
   requireAuth,
@@ -129,40 +178,26 @@ authRouter.delete(
   }),
 );
 
-// POST /auth/forgot-password → { ok: true }
-// Always returns {ok} to not leak whether email exists
+// ── POST /auth/forgot-password → { ok: true }
 authRouter.post(
   '/forgot-password',
   asyncHandler(async (req, res) => {
     const { email } = z.object({ email: z.string().trim().toLowerCase().email() }).parse(req.body);
-
     const user = await prisma.appUser.findUnique({ where: { email } });
-    if (!user) {
-      // Don't leak existence - always return ok
-      res.json({ ok: true });
-      return;
-    }
+    if (!user) { res.json({ ok: true }); return; }
 
-    // Generate a secure reset token
     const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
 
-    // Delete any existing tokens for this user
     await prisma.passwordResetToken.deleteMany({ where: { userId: user.id } });
-
-    // Create new reset token
-    await prisma.passwordResetToken.create({
-      data: { userId: user.id, token, expiresAt },
-    });
-
-    // Send password-reset email (best-effort)
+    await prisma.passwordResetToken.create({ data: { userId: user.id, token, expiresAt } });
     sendResetPasswordEmail(user.email, token);
 
     res.json({ ok: true });
   }),
 );
 
-// POST /auth/reset-password → { ok: true }
+// ── POST /auth/reset-password → { ok: true }
 authRouter.post(
   '/reset-password',
   asyncHandler(async (req, res) => {
@@ -173,29 +208,20 @@ authRouter.post(
       })
       .parse(req.body);
 
-    // Find valid token
     const resetToken = await prisma.passwordResetToken.findUnique({
       where: { token },
       include: { user: true },
     });
 
-    if (!resetToken) {
-      throw badRequest('Invalid or expired reset token');
-    }
-
+    if (!resetToken) throw badRequest('Invalid or expired reset link');
     if (resetToken.expiresAt < new Date()) {
       await prisma.passwordResetToken.delete({ where: { token } });
-      throw badRequest('Reset token has expired');
+      throw badRequest('Reset link has expired. Please request a new one.');
     }
 
-    // Update password
     const passwordHash = await hashPassword(newPassword);
-
     await prisma.$transaction([
-      prisma.appUser.update({
-        where: { id: resetToken.userId },
-        data: { passwordHash },
-      }),
+      prisma.appUser.update({ where: { id: resetToken.userId }, data: { passwordHash } }),
       prisma.passwordResetToken.delete({ where: { token } }),
     ]);
 

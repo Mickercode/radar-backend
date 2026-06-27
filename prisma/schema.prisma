@@ -365,6 +365,21 @@ model Subscription {
   @@map("subscription")
 }
 
+// ── Email OTP (pending signup verification) ────────────────────────────────────
+
+model PendingSignup {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  name         String?
+  otp          String
+  expiresAt    DateTime @map("expires_at") @db.Timestamptz(6)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([email])
+  @@map("pending_signup")
+}
+
 // ── Password Reset ─────────────────────────────────────────────────────────────
 
 model PasswordResetToken {
