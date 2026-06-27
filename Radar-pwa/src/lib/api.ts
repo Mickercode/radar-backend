@@ -1,6 +1,5 @@
 // Typed API client for the Radar backend.
-// Base URL is set via VITE_API_BASE_URL env var (empty = same origin).
-const BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '';
+const BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? '';
 
 async function get<T>(path: string, params?: Record<string, string>): Promise<T> {
   const url = new URL(BASE + path, window.location.origin);
