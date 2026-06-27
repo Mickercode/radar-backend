@@ -5,6 +5,7 @@ import { Icon } from './Icon';
 const navItems = [
   { to: '/', icon: 'feed' as const, label: 'Feed' },
   { to: '/capture', icon: 'capture' as const, label: 'Capture' },
+  { to: '/notebook', icon: 'notebook' as const, label: 'Notes' },
   { to: '/brain', icon: 'brain' as const, label: 'Brain' },
   { to: '/profile', icon: 'profile' as const, label: 'Profile' },
 ] as const;

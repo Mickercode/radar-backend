@@ -9,6 +9,7 @@ import type {
   InsightReview,
   InsightQuizQuestion,
   InsightQuizAttempt,
+  Note,
 } from '@prisma/client';
 
 // Serializers that turn Prisma rows into the app's domain shapes (types/content.ts).
@@ -135,5 +136,16 @@ export function toQuizAttempt(a: InsightQuizAttempt) {
     correctCount: a.correctCount,
     totalCount: a.totalCount,
     attemptedAt: a.attemptedAt.toISOString(),
+  };
+}
+
+export function toNote(n: Note) {
+  return {
+    id: n.id,
+    userId: n.userId,
+    title: n.title,
+    body: n.body,
+    createdAt: n.createdAt.toISOString(),
+    updatedAt: n.updatedAt.toISOString(),
   };
 }
