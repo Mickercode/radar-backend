@@ -44,7 +44,7 @@ LANGUAGE RULES — never break these:
 
 5) HOW IT MATTERS TO YOU (field: "how_it_matters_to_you") — About 300 words of plain prose. Speak directly to the reader. Give specific, practical advice: what to do, what to avoid, what to watch for. Use simple everyday Nigerian examples. Make it feel personal and useful.
 
-6) GLOSSARY (field: "glossary") — Array of strings. Only words that are difficult or technical in this specific story. Each string: "Word: Simple one-sentence definition relevant to this story." Return empty array if no difficult words.`;
+6) GLOSSARY (field: "glossary") — Array of strings. Only words that are difficult or technical in this specific story. Each string: "Word: Simple one-sentence definition relevant to this story." Return empty array if no difficult words.
 
 === SCORING ===
 

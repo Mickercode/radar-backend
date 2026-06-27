@@ -86,23 +86,6 @@ TIER:
 - 3 (Weak): <3 — dropped
 
 OUTPUT — strict JSON only: { "relevant", "what", "key_takeaways":[], "why", "how_it_matters_to_you", "glossary":[], "forwardable", "advantage", "non_obvious", "learnable", "nigeria_relevance", "tier" }`;
-
-=== SCORING ===
-
-10/10 TEST — true/false each:
-- forwardable: Would a busy person forward this?
-- advantage: Does this give the reader a real edge?
-- non_obvious: Would a smart reader NOT already know this?
-- learnable: Can the reader apply something concrete?
-
-NIGERIA RELEVANCE (0-3): 0=none 1=tangential 2=relevant 3=Nigeria/Africa-specific
-
-TIER:
-- 1 (Must-see): >=3 tests pass AND nigeria_relevance>=2 AND concrete edge
-- 2 (Strong): >=3 tests pass
-- 3 (Weak): <3 — dropped
-
-OUTPUT — strict JSON only: { "relevant", "what", "key_takeaways":[], "why", "edge", "forwardable", "advantage", "non_obvious", "learnable", "nigeria_relevance", "tier" }`;
 }
 
 export async function generateSummary(
