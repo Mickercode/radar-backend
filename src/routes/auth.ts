@@ -168,6 +168,60 @@ authRouter.patch(
   }),
 );
 
+// ── GET /auth/me → { user, preferences }  (authenticated)
+authRouter.get(
+  '/me',
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const uid = userId(req);
+    const user = await prisma.appUser.findUnique({
+      where: { id: uid },
+      include: { preferences: true },
+    });
+    if (!user) throw unauthorized('User not found');
+    res.json({
+      user: publicUser(user),
+      preferences: {
+        interests: user.preferences?.interests ?? [],
+        location: user.preferences?.location ?? null,
+        onboardingDone: user.preferences?.onboardingDone ?? false,
+      },
+    });
+  }),
+);
+
+// ── PATCH /auth/interests { interests, location?, onboardingDone? } → { ok: true }
+authRouter.patch(
+  '/interests',
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const { interests, location, onboardingDone } = z
+      .object({
+        interests: z.array(z.string().trim().min(1)).max(20),
+        location: z.string().trim().max(200).optional(),
+        onboardingDone: z.boolean().optional(),
+      })
+      .parse(req.body);
+
+    const uid = userId(req);
+    await prisma.userPreferences.upsert({
+      where: { userId: uid },
+      create: {
+        userId: uid,
+        interests,
+        location: location ?? null,
+        onboardingDone: onboardingDone ?? false,
+      },
+      update: {
+        interests,
+        ...(location !== undefined && { location }),
+        ...(onboardingDone !== undefined && { onboardingDone }),
+      },
+    });
+    res.json({ ok: true });
+  }),
+);
+
 // ── DELETE /auth/account → { ok: true }   (authenticated)
 authRouter.delete(
   '/account',

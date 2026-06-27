@@ -172,18 +172,21 @@ model PlaybackState {
 }
 
 model UserPreferences {
-  userId                String   @id @map("user_id") @db.Uuid
-  topicIds              String[] @default([]) @map("topic_ids") @db.Uuid
-  contentTypes          String[] @default([]) @map("content_types")
-  playbackSpeed         Decimal  @default(1.0) @map("playback_speed") @db.Decimal(3, 2)
-  pushToken             String?  @map("push_token")
+  userId               String   @id @map("user_id") @db.Uuid
+  topicIds             String[] @default([]) @map("topic_ids") @db.Uuid
+  contentTypes         String[] @default([]) @map("content_types")
+  interests            String[] @default([]) @map("interests")
+  location             String?  @map("location")
+  playbackSpeed        Decimal  @default(1.0) @map("playback_speed") @db.Decimal(3, 2)
+  pushToken            String?  @map("push_token")
   preferredCountry     String?  @map("preferred_country") @db.VarChar(10)
   notificationsEnabled Boolean  @default(false) @map("notifications_enabled")
-  digestTime           String?  @map("digest_time") @db.VarChar(10) // Format: "09:00"
+  digestTime           String?  @map("digest_time") @db.VarChar(10)
   reviewReminders      Boolean  @default(true) @map("review_reminders")
+  onboardingDone       Boolean  @default(false) @map("onboarding_done")
   updatedAt            DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  user             AppUser             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user AppUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([pushToken])
   @@map("user_preferences")

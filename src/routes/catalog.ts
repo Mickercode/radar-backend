@@ -29,13 +29,28 @@ catalogRouter.get(
   }),
 );
 
-// GET /feed?topicIds=a,b&country=NG → { items, isFallback, matchedTopics }
+// GET /feed?topicIds=a,b&country=NG&interests=tech,finance
+// When authenticated and no topicIds supplied, auto-applies user preferences.
 catalogRouter.get(
   '/feed',
   asyncHandler(async (req, res) => {
     const topicIds = parseList(req.query.topicIds);
     const country = req.query.country as string | undefined;
-    res.json(await getFeed(topicIds, country));
+    const interests = parseList(req.query.interests);
+
+    // If authenticated and no explicit interests, load from user prefs
+    let effectiveInterests = interests;
+    let effectiveCountry = country;
+    const uid = (req as { userId?: string }).userId;
+    if (uid && effectiveInterests.length === 0) {
+      const prefs = await prisma.userPreferences.findUnique({ where: { userId: uid } });
+      if (prefs) {
+        effectiveInterests = prefs.interests;
+        if (!effectiveCountry && prefs.location) effectiveCountry = prefs.location;
+      }
+    }
+
+    res.json(await getFeed(topicIds, effectiveCountry, effectiveInterests));
   }),
 );
 

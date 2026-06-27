@@ -44,12 +44,42 @@ export interface FeedResult {
 // brand-new user who picked one narrow topic still sees a full first screen.
 const SPARSE_TOPIC_THRESHOLD = 5;
 
-export async function getFeed(topicIds: string[], country?: string): Promise<FeedResult> {
+// Map interest slugs to topic slugs that exist in the DB.
+const INTEREST_TO_TOPIC_SLUGS: Record<string, string[]> = {
+  climate:    ['climate', 'environment', 'energy'],
+  health:     ['health', 'wellness', 'medicine'],
+  science:    ['science', 'research', 'space'],
+  tech:       ['tech', 'technology', 'ai', 'startups'],
+  business:   ['business', 'economy', 'markets'],
+  finance:    ['finance', 'money', 'crypto', 'investment'],
+  politics:   ['politics', 'government', 'policy'],
+  sports:     ['sports', 'football', 'athletics'],
+  music:      ['music', 'entertainment'],
+  film:       ['film', 'tv', 'entertainment', 'cinema'],
+  education:  ['education', 'learning'],
+  fashion:    ['fashion', 'lifestyle', 'style'],
+  travel:     ['travel', 'lifestyle'],
+  faith:      ['faith', 'religion', 'philosophy'],
+};
+
+async function interestTopicIds(interests: string[]): Promise<string[]> {
+  if (interests.length === 0) return [];
+  const slugs = interests.flatMap((i) => INTEREST_TO_TOPIC_SLUGS[i.toLowerCase()] ?? [i.toLowerCase()]);
+  const unique = [...new Set(slugs)];
+  const topics = await prisma.topic.findMany({ where: { slug: { in: unique } }, select: { id: true } });
+  return topics.map((t) => t.id);
+}
+
+export async function getFeed(topicIds: string[], country?: string, interests: string[] = []): Promise<FeedResult> {
   // Step 1: filtered query (the user's actual topic preferences).
+  // Merge explicit topicIds with any derived from interest slugs.
+  const interestIds = await interestTopicIds(interests);
+  const allTopicIds = [...new Set([...topicIds, ...interestIds])];
+
   let primary: SerializedContent[] = [];
-  if (topicIds.length > 0) {
+  if (allTopicIds.length > 0) {
     const rows = await prisma.content.findMany({
-      where: { topicId: { in: topicIds } },
+      where: { topicId: { in: allTopicIds } },
       include: { summary: true },
       orderBy: { createdAt: 'desc' },
       take: 40,
@@ -76,9 +106,7 @@ export async function getFeed(topicIds: string[], country?: string): Promise<Fee
 
   return {
     items: merged,
-    // Only a "fallback" if the user HAD topics and we had to widen. Empty topics
-    // = the default unfiltered feed, not a fallback.
-    isFallback: topicIds.length > 0 && primary.length < SPARSE_TOPIC_THRESHOLD,
+    isFallback: allTopicIds.length > 0 && primary.length < SPARSE_TOPIC_THRESHOLD,
     matchedTopics: primary.length,
   };
 }
