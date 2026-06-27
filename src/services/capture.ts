@@ -10,43 +10,41 @@ export interface CapturedInsight {
   sourceUrl: string;
   title: string;
   what: string;
+  keyTakeaways: string[];
   why: string;
-  edge: string;
+  howItMattersToYou: string;
+  glossary: string[];
   tier: 1 | 2 | 3;
   nigeriaRelevance: 0 | 1 | 2 | 3;
 }
 
 function buildPrompt(c: ExtractedContent): string {
-  return `You are Radar's editorial AI. Radar delivers sharp, non-obvious insights for ambitious Nigerian/African readers.
+  return `You are Radar's editorial AI. Write for ambitious Nigerian/African readers. A secondary school student must understand every sentence.
 
 INPUT (a URL the user wants to remember)
 URL: ${c.url}
 Title: ${c.title}
 Body: ${c.body}
 
-Rules:
-- Write in plain, natural prose. NO dashes, NO bullet points, NO markdown, NO asterisks in any field except key_takeaways.
-- Use very simple English. Short sentences. Avoid jargon except where necessary.
-- Never repeat the same idea across sections.
-- Always include Nigerian/African context: infrastructure, power, cost, financial inclusion, regulatory environment, Nigeria's position in Africa.
+LANGUAGE RULES — never break these:
+- Simple English only. Maximum 15 words per sentence.
+- No markdown, no dashes, no bullets in prose fields. Plain sentences only.
+- Always include Nigerian/African context: naira, fuel prices, data costs, power supply, financial inclusion.
+- Each section must do DIFFERENT work.
 
-The four sections below must each do DIFFERENT work.
+=== SECTIONS ===
 
-=== STRUCTURE ===
+1) TITLE — A clean 6-10 word title. Use the source's title if good; rewrite if it is clickbait.
 
-1) TITLE — A clean 6-10 word title. Use the source's title if good; rewrite if it's clickbait.
+2) SUMMARY (field: "what") — 2 plain sentences. What happened. Key facts only. Neutral tone.
 
-2) SUMMARY (field: "what") — Write 2-3 sentences of plain prose. State what happened and the key facts. Read like a newspaper lead, not a list. Neutral, factual. No dashes, no bullets.
+3) KEY TAKEAWAYS (field: "key_takeaways") — Array of 3 to 5 items. Mix real risks, one opportunity most people miss, and one non-obvious observation. Each is one complete sentence in very simple English. No leading dash, no bullet, no number. Just the sentence.
 
-3) KEY TAKEAWAYS (field: "key_takeaways") — Array of 3 or 4 items. Mix:
-   - 1-2 real risks (cost, compliance, inequality)
-   - 1 opportunity or nuance most people miss
-   - 1 non-obvious observation
-   Each item: one complete, specific sentence. No leading dash, no bullet symbol, no numbering. Just the sentence.
+4) WHY IT MATTERS (field: "why") — About 150 words of plain prose. Show the country-level or society-level impact. Connect to real changes Nigerians will feel. Not a list.
 
-4) WHY IT MATTERS (field: "why") — Write 2-3 sentences of flowing prose. Connect to human impact, trust, financial inclusion, systemic consequences. Not a repeat of takeaways. No dashes, no bullets.
+5) HOW IT MATTERS TO YOU (field: "how_it_matters_to_you") — About 300 words of plain prose. Speak directly to the reader. Give specific, practical advice: what to do, what to avoid, what to watch for. Use simple everyday Nigerian examples. Make it feel personal and useful.
 
-5) THE EDGE (field: "edge") — The most important section. Write exactly 2 sentences of plain prose. Give a forward-looking or slightly contrarian view. What smart readers should think or watch for. No dashes, no bullets. FORBIDDEN: "Stay informed", "Keep an eye on", "Proactively assess".
+6) GLOSSARY (field: "glossary") — Array of strings. Only words that are difficult or technical in this specific story. Each string: "Word: Simple one-sentence definition relevant to this story." Return empty array if no difficult words.`;
 
 === SCORING ===
 
@@ -54,7 +52,7 @@ The four sections below must each do DIFFERENT work.
 NIGERIA RELEVANCE (0-3)
 TIER: 1 (>=3 tests + relevance>=2 + edge), 2 (>=3 tests), 3 (<3)
 
-OUTPUT — strict JSON: { "title", "what", "key_takeaways":[], "why", "edge", "forwardable", "advantage", "non_obvious", "learnable", "nigeria_relevance", "tier" }`;
+OUTPUT — strict JSON: { "title", "what", "key_takeaways":[], "why", "how_it_matters_to_you", "glossary":[], "forwardable", "advantage", "non_obvious", "learnable", "nigeria_relevance", "tier" }`;
 }
 
 const clampScore = (v: unknown): 0 | 1 | 2 | 3 =>
@@ -74,7 +72,8 @@ export async function captureUrl(url: string): Promise<CapturedInsight> {
         what: { type: 'string' },
         key_takeaways: { type: 'array', items: { type: 'string' } },
         why: { type: 'string' },
-        edge: { type: 'string' },
+        how_it_matters_to_you: { type: 'string' },
+        glossary: { type: 'array', items: { type: 'string' } },
         forwardable: { type: 'boolean' },
         advantage: { type: 'boolean' },
         non_obvious: { type: 'boolean' },
@@ -82,19 +81,29 @@ export async function captureUrl(url: string): Promise<CapturedInsight> {
         nigeria_relevance: { type: 'integer', enum: [0, 1, 2, 3] },
         tier: { type: 'integer', enum: [1, 2, 3] },
       },
-      required: ['title', 'what', 'key_takeaways', 'why', 'edge', 'forwardable', 'advantage', 'non_obvious', 'learnable', 'nigeria_relevance', 'tier'],
+      required: ['title', 'what', 'key_takeaways', 'why', 'how_it_matters_to_you', 'glossary', 'forwardable', 'advantage', 'non_obvious', 'learnable', 'nigeria_relevance', 'tier'],
     },
   }, {
     temperature: 0.25,
-    maxOutputTokens: 1200,
+    maxOutputTokens: 2000,
   })) as Record<string, unknown>;
+
+  const stripDash = (s: string) => s.trim().replace(/^[-•*]\s*/, '');
+  const rawTakeaways = Array.isArray(parsed.key_takeaways)
+    ? (parsed.key_takeaways as unknown[]).filter((k): k is string => typeof k === 'string').map(stripDash)
+    : [];
+  const rawGlossary = Array.isArray(parsed.glossary)
+    ? (parsed.glossary as unknown[]).filter((k): k is string => typeof k === 'string')
+    : [];
 
   return {
     sourceUrl: url,
     title: String(parsed.title || content.title || 'Saved insight'),
-    what: String(parsed.what || ''),
-    why: String(parsed.why || ''),
-    edge: String(parsed.edge || ''),
+    what: stripDash(String(parsed.what || '')),
+    keyTakeaways: rawTakeaways,
+    why: stripDash(String(parsed.why || '')),
+    howItMattersToYou: stripDash(String(parsed.how_it_matters_to_you || '')),
+    glossary: rawGlossary,
     tier: (parsed.tier === 1 || parsed.tier === 2 ? parsed.tier : 3) as 1 | 2 | 3,
     nigeriaRelevance: clampScore(parsed.nigeria_relevance),
   };

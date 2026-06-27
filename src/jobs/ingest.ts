@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import Parser from 'rss-parser';
 import {
   MAX_CLIP_DURATION_SEC,
+  MAX_PODCAST_AGE_DAYS,
   MAX_PODCAST_DURATION_SEC,
   MIN_CLIP_DURATION_SEC,
   MIN_PODCAST_DURATION_SEC,
@@ -112,9 +113,15 @@ function synthesizeMoments(duration: number) {
 
 function summaryData(s: SummaryResult) {
   return {
-    what: s.what, why: s.why, edge: s.edge, tier: s.tier,
-    forwardable: s.forwardable, advantage: s.advantage,
-    nonObvious: s.non_obvious, learnable: s.learnable,
+    what: s.what,
+    why: s.why,
+    edge: s.how_it_matters_to_you,
+    glossary: s.glossary,
+    tier: s.tier,
+    forwardable: s.forwardable,
+    advantage: s.advantage,
+    nonObvious: s.non_obvious,
+    learnable: s.learnable,
     nigeriaRelevance: s.nigeria_relevance,
     summary: s.what,
     keyTakeaways: s.key_takeaways,
@@ -217,6 +224,13 @@ async function ingestPodcasts(stats: Stats, budget: { left: number }) {
 
     const duration = parseItunesDuration(c.item.itunes?.duration) ?? 1800;
     if (duration < MIN_PODCAST_DURATION_SEC || duration > MAX_PODCAST_DURATION_SEC) { stats.skippedDuration++; continue; }
+
+    // Skip podcasts older than MAX_PODCAST_AGE_DAYS (0-2 weeks rule).
+    if (c.item.isoDate) {
+      const ageDays = (Date.now() - new Date(c.item.isoDate).getTime()) / 86_400_000;
+      if (ageDays > MAX_PODCAST_AGE_DAYS) { stats.skippedDuration++; continue; }
+    }
+
     if (await alreadyHave(c.source, title)) continue;
 
     const description = descriptionOf(c.item);

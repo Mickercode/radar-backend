@@ -113,7 +113,8 @@ model Summary {
   // PLAYBOOK §4A What-Why-Edge + 10/10 Test + Nigeria relevance.
   what             String?
   why              String?
-  edge             String?
+  edge             String?  // stores "How It Matters to You" content
+  glossary         String[] @default([]) @map("glossary")
   tier             Int?     @db.SmallInt
   forwardable      Boolean?
   advantage        Boolean?

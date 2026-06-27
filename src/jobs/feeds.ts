@@ -134,7 +134,10 @@ export const PER_YOUTUBE_CHANNEL = 10;
 export const MIN_PODCAST_DURATION_SEC = 300;
 export const MAX_PODCAST_DURATION_SEC = 4 * 60 * 60;
 export const MIN_CLIP_DURATION_SEC = 15;
-export const MAX_CLIP_DURATION_SEC = 180;
+export const MAX_CLIP_DURATION_SEC = 60;
+
+// Podcasts older than this are skipped (0-2 weeks rule).
+export const MAX_PODCAST_AGE_DAYS = 14;
 
 export const PROMO_TITLE_PATTERNS: RegExp[] = [
   /^\s*trailer\b/i,

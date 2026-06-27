@@ -22,7 +22,8 @@ export interface SummaryResult {
   what: string;
   key_takeaways: string[];
   why: string;
-  edge: string;
+  how_it_matters_to_you: string;
+  glossary: string[];
   forwardable: boolean;
   advantage: boolean;
   non_obvious: boolean;
@@ -36,42 +37,55 @@ export interface SummaryResult {
 // publishing a weak summary (§9: "publishing less" is the moat).
 function dropOnFailure(): SummaryResult {
   return {
-    relevant: false, what: '', key_takeaways: [], why: '', edge: '',
+    relevant: false, what: '', key_takeaways: [], why: '',
+    how_it_matters_to_you: '', glossary: [],
     forwardable: false, advantage: false, non_obvious: false, learnable: false,
     nigeria_relevance: 0, tier: 3,
   };
 }
 
 function buildPrompt(title: string, body: string, topic: string): string {
-  return `You are Radar's editorial AI. Radar delivers sharp, non-obvious insights for ambitious Nigerian/African readers. PUBLISH LESS, MAKE IT SHARPER, MAKE IT STICK.
+  return `You are Radar's editorial AI. Write for ambitious Nigerian/African readers. A secondary school student must understand every sentence. PUBLISH LESS, MAKE IT SHARPER, MAKE IT STICK.
 
 INPUT
 Title: ${title}
 Body: ${body}
 Source topic: ${topic}
 
-Rules:
-- Write in plain, natural prose. NO dashes, NO bullet points, NO markdown, NO asterisks in any field except key_takeaways.
-- Use very simple English. Short sentences. Avoid jargon except where necessary (fintech, compliance, data sovereignty).
-- Never repeat the same idea across sections.
-- Always include Nigerian/African context: infrastructure reality, power problems, cost of business, financial inclusion, history of regulatory surprises, Nigeria's position in Africa.
-- The four sections below must each do DIFFERENT work.
+LANGUAGE RULES — never break these:
+- Simple English only. Maximum 15 words per sentence.
+- No markdown, no dashes, no bullets in prose fields (what, why, how_it_matters_to_you). Plain sentences only.
+- Always ground the story in Nigerian/African reality: naira, fuel prices, data costs, power supply, financial inclusion, small business life.
+- Each section must do DIFFERENT work — never repeat the same point.
 
-Write exactly 4 sections per the structure below, then score and tier.
+=== SECTIONS ===
 
-=== STRUCTURE ===
+1) SUMMARY (field: "what") — 2 plain sentences. What happened. Key facts only. Neutral tone.
 
-1) SUMMARY (field: "what") — What happened and the key facts. Write 2-3 sentences of plain prose. Read like a newspaper lead, not a list. Neutral tone. No dashes, no bullets.
+2) KEY TAKEAWAYS (field: "key_takeaways") — Array of 3 to 5 items. Mix real risks, one opportunity most people miss, and one non-obvious observation. Each is one complete sentence in very simple English. No leading dash, no bullet symbol, no number. Just the sentence.
 
-2) KEY TAKEAWAYS (field: "key_takeaways") — Array of 3 or 4 items. Mix:
-   - 1-2 real risks (cost, compliance burden, inequality effects)
-   - 1 opportunity or nuance most people miss
-   - 1 non-obvious observation (second-order effect)
-   Each item: one complete, specific sentence. No leading dash, no bullet symbol, no numbering. Just the sentence.
+3) WHY IT MATTERS (field: "why") — About 150 words of plain prose. Show the country-level or society-level impact. Connect to real changes Nigerians will feel. Not a list. Not a repeat of the takeaways.
 
-3) WHY IT MATTERS (field: "why") — Write 2-3 sentences of flowing prose. Connect to real human impact on Nigerian users, small businesses, everyday people, trust, financial inclusion, systemic consequences, Nigeria's position in Africa and global trends. Not a repeat of the takeaways. Zoom out. No dashes, no bullets.
+4) HOW IT MATTERS TO YOU (field: "how_it_matters_to_you") — About 300 words of plain prose. Speak directly to a reader interested in ${topic}. This is the most important section. Give specific, practical advice: what to do, what to avoid, what to watch for. Use simple everyday Nigerian examples — going to the market, paying rent, running a small business, using a mobile app. Make it feel personal, useful, and specific. Not a list.
 
-4) THE EDGE (field: "edge") — The most important section. Write exactly 2 sentences of plain prose. Give a forward-looking or slightly contrarian view — what smart readers should actually think or watch for. A strategic insight that feels unique and valuable. No dashes, no bullets. FORBIDDEN words/phrases: "Stay informed", "Keep an eye on", "Be aware", "Proactively assess", "Mitigate risks".
+5) GLOSSARY (field: "glossary") — Array of strings. Only include words that are difficult or technical in this specific story. Each string: "Word: Simple one-sentence definition relevant to this story." Return an empty array if there are no difficult words.
+
+=== SCORING ===
+
+10/10 TEST — true/false each:
+- forwardable: Would a busy person forward this to a friend?
+- advantage: Does this give the reader a real edge over others?
+- non_obvious: Would a smart reader NOT already know this?
+- learnable: Can the reader apply something concrete from this?
+
+NIGERIA RELEVANCE (0-3): 0=none 1=tangential 2=relevant 3=Nigeria/Africa-specific
+
+TIER:
+- 1 (Must-see): >=3 tests pass AND nigeria_relevance>=2 AND how_it_matters_to_you is concrete
+- 2 (Strong): >=3 tests pass
+- 3 (Weak): <3 — dropped
+
+OUTPUT — strict JSON only: { "relevant", "what", "key_takeaways":[], "why", "how_it_matters_to_you", "glossary":[], "forwardable", "advantage", "non_obvious", "learnable", "nigeria_relevance", "tier" }`;
 
 === SCORING ===
 
@@ -112,7 +126,8 @@ export async function generateSummary(
         what: { type: 'string' },
         key_takeaways: { type: 'array', items: { type: 'string' } },
         why: { type: 'string' },
-        edge: { type: 'string' },
+        how_it_matters_to_you: { type: 'string' },
+        glossary: { type: 'array', items: { type: 'string' } },
         forwardable: { type: 'boolean' },
         advantage: { type: 'boolean' },
         non_obvious: { type: 'boolean' },
@@ -120,7 +135,7 @@ export async function generateSummary(
         nigeria_relevance: { type: 'integer', enum: [0, 1, 2, 3] },
         tier: { type: 'integer', enum: [1, 2, 3] },
       },
-      required: ['relevant', 'what', 'key_takeaways', 'why', 'edge', 'forwardable', 'advantage', 'non_obvious', 'learnable', 'nigeria_relevance', 'tier'],
+      required: ['relevant', 'what', 'key_takeaways', 'why', 'how_it_matters_to_you', 'glossary', 'forwardable', 'advantage', 'non_obvious', 'learnable', 'nigeria_relevance', 'tier'],
     },
   };
 
@@ -168,7 +183,7 @@ export async function generateSummary(
       const p = toolUse.input;
       if (
         typeof p?.what !== 'string' || typeof p?.key_takeaways !== 'object' ||
-        typeof p?.why !== 'string' || typeof p?.edge !== 'string' ||
+        typeof p?.why !== 'string' || typeof p?.how_it_matters_to_you !== 'string' ||
         typeof p?.tier !== 'number'
       ) {
         return dropOnFailure();
@@ -178,13 +193,16 @@ export async function generateSummary(
       const tier = (p.tier === 1 || p.tier === 2 ? p.tier : 3) as 1 | 2 | 3;
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       const raw = Array.isArray(p.key_takeaways) ? p.key_takeaways.filter((k: unknown) => typeof k === 'string') : [];
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      const glossaryRaw = Array.isArray(p.glossary) ? p.glossary.filter((k: unknown) => typeof k === 'string') : [];
       const stripDash = (s: string) => s.trim().replace(/^[-•*]\s*/, '');
       return {
         relevant: p.relevant !== false,
         what: stripDash(String(p.what)),
         key_takeaways: raw.length >= 2 ? raw.map(stripDash) : [stripDash(String(p.what)), stripDash(String(p.why))],
         why: stripDash(String(p.why)),
-        edge: stripDash(String(p.edge)),
+        how_it_matters_to_you: stripDash(String(p.how_it_matters_to_you)),
+        glossary: glossaryRaw,
         forwardable: !!p.forwardable,
         advantage: !!p.advantage,
         non_obvious: !!p.non_obvious,

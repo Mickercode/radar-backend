@@ -29,13 +29,13 @@ export function toSummary(s: Summary) {
   return {
     id: s.id,
     contentId: s.contentId,
-    // Prefer the legacy `summary`, fall back to the §4A `what`, like mapContent did.
     summary: s.summary ?? s.what ?? '',
     keyTakeaways: s.keyTakeaways ?? [],
     whyItMatters: s.whyItMatters ?? s.why ?? '',
     what: s.what ?? undefined,
     why: s.why ?? undefined,
-    edge: s.edge ?? undefined,
+    howItMattersToYou: s.edge ?? undefined,
+    glossary: s.glossary ?? [],
     tier: (s.tier ?? undefined) as 1 | 2 | 3 | undefined,
     nigeriaRelevance: (s.nigeriaRelevance ?? undefined) as 0 | 1 | 2 | 3 | undefined,
   };
