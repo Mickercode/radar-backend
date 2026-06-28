@@ -24,6 +24,11 @@ const schema = z.object({
   EMAIL_FROM: z.string().default('Radar <onboarding@resend.dev>'),
   // Public-facing URL of the app for links in emails (e.g. password reset).
   APP_URL: z.string().default('http://localhost:5173'),
+  VAPID_PUBLIC_KEY: z.string().optional(),
+  VAPID_PRIVATE_KEY: z.string().optional(),
+  VAPID_SUBJECT: z.string().default('mailto:hello@radar.ng'),
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
 });
 
 const parsed = schema.safeParse(process.env);

@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import { env, isProd } from './config/env';
 import { accountRouter } from './routes/account';
 import { authRouter } from './routes/auth';
+import { googleAuthRouter } from './routes/google-auth';
 import { catalogRouter } from './routes/catalog';
 import { contentRouter } from './routes/content';
 import { libraryRouter } from './routes/library';
@@ -38,6 +39,7 @@ export function createApp() {
 
   // ── Routes ──────────────────────────────────────────────────────────────────
   app.use('/auth', authRouter);
+  app.use('/auth', googleAuthRouter);
   app.use('/account', accountRouter);
   // Public catalog (feed/content/topics) + per-user state (saved/playback/prefs).
   // Both mount at root because their paths are top-level (/feed, /saved, …).

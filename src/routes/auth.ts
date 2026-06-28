@@ -168,6 +168,20 @@ authRouter.patch(
   }),
 );
 
+// ── GET /auth/stats → { saved, notes, insights }  (authenticated)
+authRouter.get(
+  '/stats',
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const uid = userId(req);
+    const [saved, notes] = await Promise.all([
+      prisma.savedItem.count({ where: { userId: uid } }),
+      prisma.note.count({ where: { userId: uid } }),
+    ]);
+    res.json({ saved, notes });
+  }),
+);
+
 // ── GET /auth/me → { user, preferences }  (authenticated)
 authRouter.get(
   '/me',
