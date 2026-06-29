@@ -28,6 +28,10 @@ services:
         sync: false
       - key: CORS_ORIGIN
         value: '*'
+      # Public URL of the PWA — used in password-reset and digest emails.
+      # Set this to your Vercel deployment URL (e.g. https://radar-pwa.vercel.app).
+      - key: APP_URL
+        sync: false
 
   # Ingestion worker — pulls RSS/podcasts → Claude editorial engine → feed.
   # Runs every 3 hours. Dedup by (source,title) keeps re-runs cheap — only new

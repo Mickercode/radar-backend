@@ -23,7 +23,8 @@ const schema = z.object({
   // 'Radar <radar@yourdomain.com>'.
   EMAIL_FROM: z.string().default('Radar <onboarding@resend.dev>'),
   // Public-facing URL of the app for links in emails (e.g. password reset).
-  APP_URL: z.string().default('http://localhost:5173'),
+  // Must be set in production — no default so a missing value fails loudly.
+  APP_URL: z.string().min(1, 'APP_URL is required — set it to the Vercel deployment URL'),
   VAPID_PUBLIC_KEY: z.string().optional(),
   VAPID_PRIVATE_KEY: z.string().optional(),
   VAPID_SUBJECT: z.string().default('mailto:hello@radar.ng'),
