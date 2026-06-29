@@ -19,7 +19,7 @@ async function throttle() {
 
 export interface SummaryResult {
   relevant: boolean;
-  what: string;
+  what: string; 
   key_takeaways: string[];
   why: string;
   how_it_matters_to_you: string;
