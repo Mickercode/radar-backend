@@ -5,7 +5,7 @@ import { unauthorized } from './http';
 // 30-day tokens, matching the old custom-JWT TTL. Signed/verified with our own
 // APP_JWT_SECRET — no longer the Supabase JWT secret, since nothing downstream
 // (no PostgREST/RLS) needs to validate it but this backend.
-const TOKEN_TTL = '30d';
+const TOKEN_TTL = '7d';
 
 export interface AuthClaims {
   sub: string; // app_users.id
