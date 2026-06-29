@@ -198,12 +198,20 @@ contentRouter.post(
     // Increment upload count on success
     await incrementUploadCount(uid);
 
+    const stripDash = (s: string) => s.trim().replace(/^[-•*]\s*/, '');
+    const rawTakeaways = Array.isArray(parsed.key_takeaways)
+      ? (parsed.key_takeaways as unknown[]).filter((k): k is string => typeof k === 'string').map(stripDash)
+      : [];
+
+    // Return shape matching CapturedInsight so the FE can use the same result renderer.
     res.json({
-      sourceUrl: null, // No URL for file uploads
+      sourceUrl: null,
       title: String(parsed.title || req.file.originalname || 'Uploaded document'),
-      what: String(parsed.what || ''),
-      why: String(parsed.why || ''),
-      edge: String(parsed.edge || ''),
+      what: stripDash(String(parsed.what || '')),
+      keyTakeaways: rawTakeaways,
+      why: stripDash(String(parsed.why || '')),
+      howItMattersToYou: stripDash(String(parsed.edge || '')),
+      glossary: [],
       tier: (parsed.tier === 1 || parsed.tier === 2 ? parsed.tier : 3) as 1 | 2 | 3,
       nigeriaRelevance: clampScore(parsed.nigeria_relevance),
     });
