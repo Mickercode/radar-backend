@@ -45,6 +45,26 @@ function dropOnFailure(): SummaryResult {
 }
 
 function buildPrompt(title: string, body: string, topic: string): string {
+  const topicExamples: Record<string, string> = {
+    politics:      'Speak to ordinary Nigerians — workers, market traders, students, parents. Explain what this political change means in their daily life: will security improve? Will taxes change? Will their local government get more or less power? What should they do or avoid?',
+    economy:       'Speak to salary earners, small business owners, traders, and market women. Explain how this affects the naira in their pocket, prices at the market, cost of running a shop, or getting a loan. Give practical steps: what to buy or sell now, what to delay, how to protect savings.',
+    finance:       'Speak to bank customers, people who save or send money, small traders, and anyone who uses mobile banking. Explain new charges, what the policy means for their savings or transfers, and smart ways to manage money right now.',
+    tech:          'Speak to tech workers, app users, students learning to code, and small businesses that use technology. Explain how this affects the tools they use, data costs, job opportunities, or the apps they rely on every day.',
+    sports:        'Speak to sports fans, people who bet on games, young athletes, and coaches. Explain what this news means for their favourite team or player, how it may affect local leagues, and what opportunities or risks it creates.',
+    music:         'Speak to music fans, upcoming artists, producers, and people who earn from music streaming or performing. Explain how this affects Nigerian artists earning from their work, what platforms or deals to watch, and what the change means for the music business.',
+    film:          'Speak to movie lovers, Nollywood fans, aspiring filmmakers, and cinema-goers. Explain how this affects the films they watch, the cost of going to cinemas, and what opportunities exist for Nigerian creatives.',
+    health:        'Speak to patients, parents, and workers who pay for healthcare. Explain what this means for hospital costs, access to medicine, health insurance, or staying safe. Give clear steps: what to do now, what to watch for, who to contact.',
+    education:     'Speak to students, parents paying school fees, and teachers. Explain what this means for school costs, exam systems, learning opportunities, or scholarship access. Give clear steps on what to do or prepare for.',
+    business:      'Speak to entrepreneurs, small business owners, market traders, and side-hustle runners. Explain how this affects their costs, customers, taxes, or growth plans. Give actionable tips: what to change in how they operate, what to watch out for.',
+    climate:       'Speak to farmers, people who live in flood-prone or drought-affected areas, and urban dwellers dealing with heat or water scarcity. Explain real on-the-ground effects and simple things they can do.',
+    fashion:       'Speak to fashion lovers, designers, tailors, and people who buy clothes locally or online. Explain how this affects prices, trends, or opportunities in the Nigerian fashion industry.',
+    travel:        'Speak to Nigerians who travel locally or internationally, people planning trips, and those in hospitality. Explain what this means for visa access, flight costs, hotel prices, or safety when travelling.',
+    faith:         'Speak to Nigerians of all faiths — church members, mosque goers, community leaders. Explain the human impact of this news and what it means for community life, values, or daily practice.',
+  };
+
+  const topicGuide = topicExamples[topic.toLowerCase()]
+    ?? `Speak directly to a reader who follows ${topic}. Explain how this news affects their daily life or work. Be specific about what they should do, avoid, or watch for.`;
+
   return `You are Radar's editorial AI. Write for ambitious Nigerian/African readers. A secondary school student must understand every sentence. PUBLISH LESS, MAKE IT SHARPER, MAKE IT STICK.
 
 INPUT
@@ -58,17 +78,17 @@ LANGUAGE RULES — never break these:
 - Always ground the story in Nigerian/African reality: naira, fuel prices, data costs, power supply, financial inclusion, small business life.
 - Each section must do DIFFERENT work — never repeat the same point.
 
-=== SECTIONS ===
+=== SECTIONS (follow this exact order) ===
 
 1) SUMMARY (field: "what") — 2 plain sentences. What happened. Key facts only. Neutral tone.
 
-2) KEY TAKEAWAYS (field: "key_takeaways") — Array of 3 to 5 items. Mix real risks, one opportunity most people miss, and one non-obvious observation. Each is one complete sentence in very simple English. No leading dash, no bullet symbol, no number. Just the sentence.
+2) KEY TAKEAWAYS (field: "key_takeaways") — Array of 3 to 5 items. Mix: one real risk, one opportunity most people miss, one non-obvious observation. Each is one complete sentence in very simple English. No dash, no bullet, no number. Just the sentence.
 
-3) WHY IT MATTERS (field: "why") — About 150 words of plain prose. Show the country-level or society-level impact. Connect to real changes Nigerians will feel. Not a list. Not a repeat of the takeaways.
+3) WHY IT MATTERS (field: "why") — About 150 words of plain prose. Show the country-level or society-level impact. How does this change things for Nigeria or Africa as a whole? Connect to real effects people will feel. Not a list. Different from the takeaways.
 
-4) HOW IT MATTERS TO YOU (field: "how_it_matters_to_you") — About 300 words of plain prose. Speak directly to a reader interested in ${topic}. This is the most important section. Give specific, practical advice: what to do, what to avoid, what to watch for. Use simple everyday Nigerian examples — going to the market, paying rent, running a small business, using a mobile app. Make it feel personal, useful, and specific. Not a list.
+4) HOW IT MATTERS TO YOU (field: "how_it_matters_to_you") — About 300 words of plain prose. This is the most important section. ${topicGuide} Use simple everyday Nigerian examples. Tell the reader exactly what to do, what to stop doing, and what to watch for in the next few weeks or months. Make it feel like advice from a smart friend who knows their situation. Not a list. Not vague. Specific and actionable.
 
-5) GLOSSARY (field: "glossary") — Array of strings. Only include words that are difficult or technical in this specific story. Each string: "Word: Simple one-sentence definition relevant to this story." Return an empty array if there are no difficult words.
+5) GLOSSARY (field: "glossary") — Array of strings. Only words that are difficult or technical in this specific story. Each string: "Word: Simple one-sentence definition relevant to this story." Return empty array if no difficult words.
 
 === SCORING ===
 
@@ -81,7 +101,7 @@ LANGUAGE RULES — never break these:
 NIGERIA RELEVANCE (0-3): 0=none 1=tangential 2=relevant 3=Nigeria/Africa-specific
 
 TIER:
-- 1 (Must-see): >=3 tests pass AND nigeria_relevance>=2 AND how_it_matters_to_you is concrete
+- 1 (Must-see): >=3 tests pass AND nigeria_relevance>=2 AND how_it_matters_to_you is concrete and specific
 - 2 (Strong): >=3 tests pass
 - 3 (Weak): <3 — dropped
 
@@ -124,7 +144,7 @@ export async function generateSummary(
 
   const payload = {
     model: CLAUDE_MODEL,
-    max_tokens: 1200,
+    max_tokens: 1800,
     temperature: 0.25,
     messages: [{ role: 'user', content: buildPrompt(title, body, topic) }],
     tools: [SUMMARY_TOOL],

@@ -40,9 +40,9 @@ LANGUAGE RULES — never break these:
 
 3) KEY TAKEAWAYS (field: "key_takeaways") — Array of 3 to 5 items. Mix real risks, one opportunity most people miss, and one non-obvious observation. Each is one complete sentence in very simple English. No leading dash, no bullet, no number. Just the sentence.
 
-4) WHY IT MATTERS (field: "why") — About 150 words of plain prose. Show the country-level or society-level impact. Connect to real changes Nigerians will feel. Not a list.
+4) WHY IT MATTERS (field: "why") — About 150 words of plain prose. Show the country-level or society-level impact. How does this change things for Nigeria or Africa as a whole? Connect to real effects people will feel. Not a list. Different from the takeaways.
 
-5) HOW IT MATTERS TO YOU (field: "how_it_matters_to_you") — About 300 words of plain prose. Speak directly to the reader. Give specific, practical advice: what to do, what to avoid, what to watch for. Use simple everyday Nigerian examples. Make it feel personal and useful.
+5) HOW IT MATTERS TO YOU (field: "how_it_matters_to_you") — About 300 words of plain prose. This is the most important section. Speak directly to the reader based on the content topic. Be specific: what should they do right now, what should they stop or avoid, what should they watch for in the coming weeks? Use simple everyday Nigerian examples — going to the market, paying rent, running a small business, using a mobile app, talking to their bank. Make it feel like advice from a smart friend. Not a list. Specific and actionable.
 
 6) GLOSSARY (field: "glossary") — Array of strings. Only words that are difficult or technical in this specific story. Each string: "Word: Simple one-sentence definition relevant to this story." Return empty array if no difficult words.
 
