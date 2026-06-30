@@ -115,7 +115,7 @@ LANGUAGE RULES — never break these:
 
 4) WHY IT MATTERS (field: "why") — About 150 words of plain prose. Show the country-level or society-level importance of this document's content. Connect to real effects Nigerians or Africans will feel. Not a list. Different from the takeaways.
 
-5) HOW IT MATTERS TO YOU (field: "edge") — About 300 words of plain prose. This is the most important section. Speak directly to the reader who saved this document. What should they do right now with this information? What should they stop or avoid? What should they watch for? Use simple everyday Nigerian examples. Make it feel like advice from a smart friend. Specific and actionable.
+5) HOW IT MATTERS TO YOU (field: "edge") — This is the most important section. Write 3 to 4 separate paragraphs, one for each type of person who might read this document. Each paragraph must start with exactly: "If you are a [person type]:" — then give 2 to 4 plain sentences of specific advice. Use Nigerian examples: naira amounts, market prices, mobile apps, daily work routines. Cover: (1) someone who works in or studies this field, (2) a small business owner or trader affected by this topic, (3) an ordinary citizen or family, (4) any other group directly relevant to the document. Tell them what to do, what to stop, what to watch. Direct and specific.
 
 === SCORING ===
 

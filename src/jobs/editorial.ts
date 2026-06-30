@@ -45,25 +45,31 @@ function dropOnFailure(): SummaryResult {
 }
 
 function buildPrompt(title: string, body: string, topic: string): string {
-  const topicExamples: Record<string, string> = {
-    politics:      'Speak to ordinary Nigerians — workers, market traders, students, parents. Explain what this political change means in their daily life: will security improve? Will taxes change? Will their local government get more or less power? What should they do or avoid?',
-    economy:       'Speak to salary earners, small business owners, traders, and market women. Explain how this affects the naira in their pocket, prices at the market, cost of running a shop, or getting a loan. Give practical steps: what to buy or sell now, what to delay, how to protect savings.',
-    finance:       'Speak to bank customers, people who save or send money, small traders, and anyone who uses mobile banking. Explain new charges, what the policy means for their savings or transfers, and smart ways to manage money right now.',
-    tech:          'Speak to tech workers, app users, students learning to code, and small businesses that use technology. Explain how this affects the tools they use, data costs, job opportunities, or the apps they rely on every day.',
-    sports:        'Speak to sports fans, people who bet on games, young athletes, and coaches. Explain what this news means for their favourite team or player, how it may affect local leagues, and what opportunities or risks it creates.',
-    music:         'Speak to music fans, upcoming artists, producers, and people who earn from music streaming or performing. Explain how this affects Nigerian artists earning from their work, what platforms or deals to watch, and what the change means for the music business.',
-    film:          'Speak to movie lovers, Nollywood fans, aspiring filmmakers, and cinema-goers. Explain how this affects the films they watch, the cost of going to cinemas, and what opportunities exist for Nigerian creatives.',
-    health:        'Speak to patients, parents, and workers who pay for healthcare. Explain what this means for hospital costs, access to medicine, health insurance, or staying safe. Give clear steps: what to do now, what to watch for, who to contact.',
-    education:     'Speak to students, parents paying school fees, and teachers. Explain what this means for school costs, exam systems, learning opportunities, or scholarship access. Give clear steps on what to do or prepare for.',
-    business:      'Speak to entrepreneurs, small business owners, market traders, and side-hustle runners. Explain how this affects their costs, customers, taxes, or growth plans. Give actionable tips: what to change in how they operate, what to watch out for.',
-    climate:       'Speak to farmers, people who live in flood-prone or drought-affected areas, and urban dwellers dealing with heat or water scarcity. Explain real on-the-ground effects and simple things they can do.',
-    fashion:       'Speak to fashion lovers, designers, tailors, and people who buy clothes locally or online. Explain how this affects prices, trends, or opportunities in the Nigerian fashion industry.',
-    travel:        'Speak to Nigerians who travel locally or internationally, people planning trips, and those in hospitality. Explain what this means for visa access, flight costs, hotel prices, or safety when travelling.',
-    faith:         'Speak to Nigerians of all faiths — church members, mosque goers, community leaders. Explain the human impact of this news and what it means for community life, values, or daily practice.',
+  // 3-4 reader personas for each topic. Each persona becomes its own labelled
+  // paragraph in how_it_matters_to_you using the pattern "If you are a X: ..."
+  const topicPersonas: Record<string, string[]> = {
+    politics:   ['a normal citizen or family', 'a small business owner or trader', 'a student or young person', 'a community leader or landlord'],
+    economy:    ['a salary earner or employee', 'a small business owner, trader, or market woman', 'a student or job seeker', 'a landlord or property owner'],
+    finance:    ['a bank customer or someone who saves money', 'a small business owner or trader who uses POS or mobile banking', 'a student or young person managing money', 'someone who sends or receives money from family abroad'],
+    tech:       ['someone who works in tech or uses apps for work', 'a small business owner using technology to sell or operate', 'a student or someone learning digital skills', 'a content creator or freelancer who works online'],
+    sports:     ['a sports fan who watches matches', 'someone who bets on sports', 'a young athlete or someone who plays sport locally', 'a coach, club owner, or sports business owner'],
+    music:      ['a music fan and listener', 'an upcoming artist, singer, or performer', 'a music producer, sound engineer, or studio owner', 'someone who earns money from music — streaming, shows, or promotions'],
+    film:       ['a movie lover and cinema-goer', 'an aspiring filmmaker, actor, or content creator', 'a cinema owner or film distributor', 'a Nollywood fan following the industry'],
+    health:     ['an ordinary person or patient', 'a parent with children', 'a small healthcare worker or pharmacy owner', 'someone paying for health insurance or hospital bills'],
+    education:  ['a student — secondary school or university', 'a parent paying school fees', 'a teacher or school administrator', 'someone looking for scholarships or study opportunities'],
+    business:   ['a small business owner or trader', 'an employee or salary earner', 'an entrepreneur or startup founder', 'a market trader or artisan who works daily'],
+    climate:    ['a farmer or someone who grows food', 'a person living near water, coast, or flood-risk area', 'a city dweller dealing with heat, flooding, or water shortage', 'a small business owner affected by weather or energy costs'],
+    fashion:    ['a fashion lover who buys clothes regularly', 'a designer, tailor, or fashion student', 'a fashion business owner or boutique operator', 'someone who buys or sells fabric or clothes in the market'],
+    travel:     ['someone planning a local or international trip', 'a traveller who needs a visa or passport', 'a hotel owner, travel agent, or tour guide', 'a student or worker going abroad for school or work'],
+    faith:      ['a regular church member or mosque attendee', 'a faith community leader or pastor', 'a parent raising children in a faith community', 'someone whose work or life intersects with faith organisations'],
   };
 
-  const topicGuide = topicExamples[topic.toLowerCase()]
-    ?? `Speak directly to a reader who follows ${topic}. Explain how this news affects their daily life or work. Be specific about what they should do, avoid, or watch for.`;
+  const personas = topicPersonas[topic.toLowerCase()]
+    ?? ['a normal citizen or family', 'a small business owner or trader', 'a student or young person', 'someone in the formal or professional sector'];
+
+  const personaGuide = personas
+    .map((p) => `If you are ${p}: [2-4 specific sentences. What this means for them. What they should do or avoid. Use real Nigerian examples — naira amounts, local shops, mobile apps, daily routines.]`)
+    .join('\n\n');
 
   return `You are Radar's editorial AI. Write for ambitious Nigerian/African readers. A secondary school student must understand every sentence. PUBLISH LESS, MAKE IT SHARPER, MAKE IT STICK.
 
@@ -86,7 +92,10 @@ LANGUAGE RULES — never break these:
 
 3) WHY IT MATTERS (field: "why") — About 150 words of plain prose. Show the country-level or society-level impact. How does this change things for Nigeria or Africa as a whole? Connect to real effects people will feel. Not a list. Different from the takeaways.
 
-4) HOW IT MATTERS TO YOU (field: "how_it_matters_to_you") — About 300 words of plain prose. This is the most important section. ${topicGuide} Use simple everyday Nigerian examples. Tell the reader exactly what to do, what to stop doing, and what to watch for in the next few weeks or months. Make it feel like advice from a smart friend who knows their situation. Not a list. Not vague. Specific and actionable.
+4) HOW IT MATTERS TO YOU (field: "how_it_matters_to_you") — This is the most important section. Write 3 to 4 separate paragraphs, one for each type of reader. Each paragraph must start with exactly this format: "If you are a [person type]:" — then give 2 to 4 plain sentences of specific advice for that person. Use Nigerian examples: naira amounts, market prices, mobile apps, daily routines. Tell them what to do, what to stop, what to watch. Be direct. No vague language. No repeated points from earlier sections.
+
+Write these paragraphs in order:
+${personaGuide}
 
 5) GLOSSARY (field: "glossary") — Array of strings. Only words that are difficult or technical in this specific story. Each string: "Word: Simple one-sentence definition relevant to this story." Return empty array if no difficult words.
 

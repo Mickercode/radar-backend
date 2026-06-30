@@ -42,7 +42,7 @@ LANGUAGE RULES — never break these:
 
 4) WHY IT MATTERS (field: "why") — About 150 words of plain prose. Show the country-level or society-level impact. How does this change things for Nigeria or Africa as a whole? Connect to real effects people will feel. Not a list. Different from the takeaways.
 
-5) HOW IT MATTERS TO YOU (field: "how_it_matters_to_you") — About 300 words of plain prose. This is the most important section. Speak directly to the reader based on the content topic. Be specific: what should they do right now, what should they stop or avoid, what should they watch for in the coming weeks? Use simple everyday Nigerian examples — going to the market, paying rent, running a small business, using a mobile app, talking to their bank. Make it feel like advice from a smart friend. Not a list. Specific and actionable.
+5) HOW IT MATTERS TO YOU (field: "how_it_matters_to_you") — This is the most important section. Write 3 to 4 separate paragraphs, one for each type of person who might read this. Each paragraph must start with exactly this format: "If you are a [person type]:" — then give 2 to 4 plain sentences of specific advice. Use Nigerian examples: naira amounts, market prices, mobile apps, daily routines. Cover: (1) ordinary citizens or families, (2) small business owners or traders, (3) students or young workers, (4) any other group directly affected by this story. Tell each group what to do, what to stop, what to watch. Direct. Specific. No vague language.
 
 6) GLOSSARY (field: "glossary") — Array of strings. Only words that are difficult or technical in this specific story. Each string: "Word: Simple one-sentence definition relevant to this story." Return empty array if no difficult words.
 
