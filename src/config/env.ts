@@ -30,6 +30,9 @@ const schema = z.object({
   VAPID_SUBJECT: z.string().default('mailto:hello@radar.ng'),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
+  // Comma-separated admin emails — e.g. "you@gmail.com,ops@radar.ng".
+  // Users in this list can access GET /admin/stats.
+  ADMIN_EMAILS: z.string().default(''),
 });
 
 const parsed = schema.safeParse(process.env);

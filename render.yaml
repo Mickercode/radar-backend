@@ -32,6 +32,9 @@ services:
       # Set this to your Vercel deployment URL (e.g. https://radar-pwa.vercel.app).
       - key: APP_URL
         sync: false
+      # Comma-separated emails allowed to access GET /admin/stats.
+      - key: ADMIN_EMAILS
+        sync: false
 
   # Ingestion worker — pulls RSS/podcasts → Claude editorial engine → feed.
   # Runs every 3 hours. Dedup by (source,title) keeps re-runs cheap — only new
