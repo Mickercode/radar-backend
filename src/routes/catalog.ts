@@ -29,6 +29,34 @@ catalogRouter.get(
   }),
 );
 
+// Nigerian city/state names → 'NG'. African country names → 'AFRICA'.
+// This normalizes the location string stored during onboarding (e.g. "Lagos",
+// "Abuja") into the country codes rankFeed actually checks.
+const NIGERIAN_PLACES = new Set([
+  'lagos', 'abuja', 'kano', 'ibadan', 'port harcourt', 'benin city', 'maiduguri',
+  'zaria', 'aba', 'jos', 'ilorin', 'oyo', 'enugu', 'abeokuta', 'onitsha', 'warri',
+  'sokoto', 'uyo', 'calabar', 'kaduna', 'akure', 'bauchi', 'owerri', 'asaba',
+  'yenagoa', 'makurdi', 'minna', 'lafia', 'jalingo', 'umuahia', 'gusau', 'dutse',
+  'birnin kebbi', 'gombe', 'awka', 'abakaliki', 'damaturu', 'yola', 'lokoja',
+  'nigeria', 'ng',
+]);
+const AFRICAN_COUNTRIES = new Set([
+  'ghana', 'kenya', 'south africa', 'ethiopia', 'egypt', 'tanzania', 'uganda',
+  'cameroon', 'ivory coast', 'senegal', 'zambia', 'zimbabwe', 'mozambique',
+  'angola', 'sudan', 'rwanda', 'mali', 'niger', 'chad', 'africa',
+]);
+
+function toCountryCode(location: string | null | undefined): string | undefined {
+  if (!location) return undefined;
+  const lc = location.trim().toLowerCase();
+  if (lc === 'ng' || lc === 'nigeria') return 'NG';
+  if (NIGERIAN_PLACES.has(lc)) return 'NG';
+  if (AFRICAN_COUNTRIES.has(lc)) return 'AFRICA';
+  // Already a 2-letter country code from the FE
+  if (/^[a-z]{2}$/i.test(lc)) return lc.toUpperCase();
+  return undefined;
+}
+
 // GET /feed?topicIds=a,b&country=NG&interests=tech,finance
 // When authenticated and no topicIds supplied, auto-applies user preferences.
 catalogRouter.get(
@@ -40,13 +68,13 @@ catalogRouter.get(
 
     // If authenticated and no explicit interests, load from user prefs
     let effectiveInterests = interests;
-    let effectiveCountry = country;
+    let effectiveCountry = toCountryCode(country);
     const uid = (req as { userId?: string }).userId;
     if (uid && effectiveInterests.length === 0) {
       const prefs = await prisma.userPreferences.findUnique({ where: { userId: uid } });
       if (prefs) {
         effectiveInterests = prefs.interests;
-        if (!effectiveCountry && prefs.location) effectiveCountry = prefs.location;
+        if (!effectiveCountry && prefs.location) effectiveCountry = toCountryCode(prefs.location);
       }
     }
 
