@@ -17,7 +17,7 @@ import {
   TARGET_PODCASTS,
   YOUTUBE_CHANNELS,
 } from './feeds';
-import { generateSummary, aiIsHealthy, type SummaryResult } from './editorial';
+import { generateSummary, aiIsHealthy, getAiStatus, type SummaryResult } from './editorial';
 import { sendIngestDigest } from '../lib/email';
 
 // Radar ingestion worker. Pulls RSS (news + podcasts) + YouTube clips, scores
@@ -509,7 +509,25 @@ export async function runIngest() {
   }
 
   console.log(`[ingest] done — inserted ${total}`, stats);
-  
+
+  // Record run status so the admin dashboard can surface AI credit warnings.
+  const aiStatus = getAiStatus();
+  try {
+    const settingValue = JSON.stringify({
+      status: aiStatus,
+      runAt: new Date().toISOString(),
+      inserted: { news: stats.news, podcasts: stats.podcasts, clips: stats.clips },
+      skipped: { promo: stats.skippedPromo, duration: stats.skippedDuration, irrelevant: stats.skippedIrrelevant, tier3: stats.skippedTier3 },
+    });
+    await prisma.systemSetting.upsert({
+      where:  { key: 'last_ingest' },
+      create: { key: 'last_ingest', value: settingValue },
+      update: { value: settingValue },
+    });
+  } catch (e) {
+    console.warn('[ingest] failed to save ingest status:', (e as Error).message);
+  }
+
   // Purge content older than 7 days to keep the feed fresh without unbounded growth.
   try {
     const purged = await purgeContentOlderThan(7);

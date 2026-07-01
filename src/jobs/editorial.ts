@@ -20,6 +20,12 @@ export function aiIsHealthy(): boolean {
   return consecutiveFailures < MAX_CONSECUTIVE_FAILURES;
 }
 
+export function getAiStatus(): 'ok' | 'claude_credits_low' | 'ai_unavailable' {
+  if (!aiIsHealthy()) return 'ai_unavailable';
+  if (claudeBillingFailed) return 'claude_credits_low';
+  return 'ok';
+}
+
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function throttleClaude() {

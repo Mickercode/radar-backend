@@ -62,6 +62,13 @@ adminRouter.get(
       prisma.subscription.count({ where: { plan: { not: 'free' } } }),
     ]);
 
+    const lastIngestSetting = await prisma.systemSetting.findUnique({ where: { key: 'last_ingest' } });
+    const lastIngest = lastIngestSetting ? JSON.parse(lastIngestSetting.value) as {
+      status: string; runAt: string;
+      inserted: { news: number; podcasts: number; clips: number };
+      skipped: { promo: number; duration: number; irrelevant: number; tier3: number };
+    } : null;
+
     // Queries that need raw SQL
     const [topInterestsRaw, topLocationsRaw, lastIngestRaw, topSavedRaw, contentByTopicRaw] = await Promise.all([
       // Unnest interests array and count occurrences
@@ -143,6 +150,7 @@ adminRouter.get(
         tierBreakdown: Object.fromEntries(
           summaryTiers.map((r) => [`tier${r.tier ?? 'null'}`, r._count._all])
         ),
+        ingest: lastIngest ?? null,
       },
     });
   }),

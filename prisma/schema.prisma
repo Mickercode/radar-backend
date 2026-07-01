@@ -415,6 +415,16 @@ model Note {
   @@map("notes")
 }
 
+// ── System settings (key-value store for ingest status, etc.) ─────────────────
+
+model SystemSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("system_settings")
+}
+
 // ── Web Push Subscriptions ─────────────────────────────────────────────────────
 
 model PushSubscription {
