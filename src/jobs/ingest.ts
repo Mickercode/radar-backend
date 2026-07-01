@@ -208,10 +208,8 @@ async function ingestNewsFromMediastack(stats: Stats, budget: { left: number }) 
     return;
   }
 
-  const categories = Object.keys(MS_CATEGORY_TO_TOPIC).join(',');
-
-  // Sequential — Mediastack free tier rate-limits parallel requests.
-  const ngArticles = await fetchMediastack({ countries: 'ng', categories });
+  // Free tier limits concurrent and high-param requests — keep Nigeria focused.
+  const ngArticles = await fetchMediastack({ countries: 'ng', categories: 'general,business,technology,sports', limit: '50' });
   const africaArticles = await fetchMediastack({ countries: 'gh,ke,za,eg', categories: 'business,technology,general', limit: '50' });
 
   const all = [...ngArticles, ...africaArticles];

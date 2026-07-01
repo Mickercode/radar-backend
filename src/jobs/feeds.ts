@@ -128,7 +128,7 @@ export const YOUTUBE_CHANNELS: YoutubeChannel[] = [
   { channelId: 'UCJIfeSCssxSC_Dhc5s7woww', source: 'Lex Clips',      topic: 'tech'      },
   { channelId: 'UCnUYZLuoy1rq1aVMwx4aTzw', source: 'GQ',             topic: 'fashion'   },
   { channelId: 'UCqZQlzSHbVJrwrn5XvzrzcA', source: 'ESPN FC',        topic: 'sports'    },
-  { channelId: 'UCWX3yGbODI3LMbxoFpBUPnQ', source: 'Al Jazeera Eng', topic: 'politics'  },
+  { channelId: 'UCB_qr75-ydFVKSF9Dmo6izg', source: 'Al Jazeera Eng', topic: 'politics'  },
   // ── Add Nigerian channel IDs below (get from youtube.com/@channel → About) ─
   // { channelId: 'PASTE_CHANNELS_TV_ID',   source: 'Channels TV',    topic: 'politics'  },
   // { channelId: 'PASTE_TVC_NEWS_ID',      source: 'TVC News',       topic: 'politics'  },
