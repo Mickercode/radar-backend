@@ -17,7 +17,7 @@ import {
   TARGET_PODCASTS,
   YOUTUBE_CHANNELS,
 } from './feeds';
-import { generateSummary, type SummaryResult } from './editorial';
+import { generateSummary, aiIsHealthy, type SummaryResult } from './editorial';
 import { sendIngestDigest } from '../lib/email';
 
 // Radar ingestion worker. Pulls RSS (news + podcasts) + YouTube clips, scores
@@ -228,6 +228,7 @@ async function ingestNewsFromMediastack(stats: Stats, budget: { left: number }) 
 
   for (const article of candidates) {
     if (budget.left <= 0) break;
+    if (!aiIsHealthy()) { console.warn('[ingest] AI circuit open — stopping news ingest early'); break; }
     const title = article.title?.trim();
     if (!title) continue;
     if (looksLikePromo(title)) { stats.skippedPromo++; continue; }
@@ -276,6 +277,7 @@ async function ingestNews(stats: Stats, budget: { left: number }) {
 
   for (const c of roundRobin(groups)) {
     if (budget.left <= 0) break;
+    if (!aiIsHealthy()) { console.warn('[ingest] AI circuit open — stopping RSS news ingest early'); break; }
     const title = c.item.title?.trim();
     if (!title) continue;
     if (looksLikePromo(title)) { stats.skippedPromo++; continue; }
@@ -316,6 +318,7 @@ async function ingestPodcasts(stats: Stats, budget: { left: number }) {
 
   for (const c of roundRobin(groups)) {
     if (budget.left <= 0) break;
+    if (!aiIsHealthy()) { console.warn('[ingest] AI circuit open — stopping podcast ingest early'); break; }
     const title = c.item.title?.trim();
     if (!title) continue;
     if (looksLikePromo(title)) { stats.skippedPromo++; continue; }
@@ -446,6 +449,7 @@ async function ingestClips(stats: Stats, budget: { left: number }) {
 
   for (const c of roundRobin(groups)) {
     if (budget.left <= 0) break;
+    if (!aiIsHealthy()) { console.warn('[ingest] AI circuit open — stopping clips ingest early'); break; }
     if (looksLikePromo(c.title)) { stats.skippedPromo++; continue; }
     const s = await generateSummary(c.title, c.description, c.topic);
     if (!s.relevant) { stats.skippedIrrelevant++; continue; }

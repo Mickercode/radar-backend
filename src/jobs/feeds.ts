@@ -55,7 +55,6 @@ export const PODCAST_FEEDS: NewsFeed[] = [
   // ── Climate ──────────────────────────────────────────────────────────────
   { url: 'https://feeds.acast.com/public/shows/outrage-optimism', source: 'Outrage + Optimism', topic: 'climate' },
   { url: 'https://podcasts.files.bbci.co.uk/w13xtvb6.rss', source: 'The Climate Question', topic: 'climate' },
-  { url: 'https://feeds.simplecast.com/wWLTHNpq', source: 'The Energy Gang', topic: 'climate' },
 
   // ── Health ───────────────────────────────────────────────────────────────
   { url: 'https://podcasts.files.bbci.co.uk/p002vsyw.rss', source: 'Health Check', topic: 'health' },

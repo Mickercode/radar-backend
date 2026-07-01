@@ -12,6 +12,13 @@ let lastClaudeCallAt = 0;
 
 // Circuit breaker: once billing fails, skip Claude for the rest of this process run.
 let claudeBillingFailed = false;
+// Consecutive AI failures — if both providers fail repeatedly, abort early.
+let consecutiveFailures = 0;
+const MAX_CONSECUTIVE_FAILURES = 5;
+
+export function aiIsHealthy(): boolean {
+  return consecutiveFailures < MAX_CONSECUTIVE_FAILURES;
+}
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -169,15 +176,19 @@ async function callOpenRouter(prompt: string, apiKey: string): Promise<SummaryRe
     if (!res.ok) {
       const errBody = (await res.text().catch(() => '')).slice(0, 200);
       console.warn(`[editorial] OpenRouter ${res.status}: ${errBody}`);
+      // Rate-limited — short wait and let caller fall through to Claude
+      if (res.status === 429) await sleep(2000);
       return null;
     }
 
     const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
     const raw = data.choices?.[0]?.message?.content ?? '';
-    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    // DeepSeek sometimes wraps output in ```json ... ``` despite response_format: json_object
+    const jsonStr = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+    const parsed = JSON.parse(jsonStr) as Record<string, unknown>;
     return parseSummaryResult(parsed);
   } catch (e) {
-    console.warn('[editorial] OpenRouter call threw:', (e as Error).message);
+    console.warn('[editorial] OpenRouter call threw:', (e as Error).message.slice(0, 120));
     return null;
   }
 }
@@ -270,22 +281,29 @@ export async function generateSummary(
   const orKey  = process.env.OPENROUTER_API_KEY;
   const claudeKey = process.env.ANTHROPIC_API_KEY;
 
-  const body = description.replace(/<[^>]*>/g, '').trim().slice(0, 2000);
-  if (body.length < 40) return dropOnFailure();
+  const cleaned = description.replace(/<[^>]*>/g, '').trim().slice(0, 2000);
+  // YouTube clips and short podcast descriptions often have no body — use the
+  // title as the body so the AI can still score and summarise the item.
+  const body = cleaned.length >= 40 ? cleaned : title;
+  if (body.length < 5) return dropOnFailure();
 
   const prompt = buildPrompt(title, body, topic);
 
   // Primary: OpenRouter/DeepSeek
   if (orKey) {
     const result = await callOpenRouter(prompt, orKey);
-    if (result) return result;
+    if (result) { consecutiveFailures = 0; return result; }
   }
 
   // Fallback: Claude (skip if billing already failed this run)
   if (claudeKey && !claudeBillingFailed) {
     const result = await callClaude(prompt, claudeKey);
-    if (result) return result;
+    if (result) { consecutiveFailures = 0; return result; }
   }
 
+  consecutiveFailures++;
+  if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+    console.error(`[editorial] Both AI providers failed ${consecutiveFailures} times in a row — aborting remaining items`);
+  }
   return dropOnFailure();
 }
