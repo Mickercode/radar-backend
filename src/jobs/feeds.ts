@@ -138,14 +138,16 @@ export const YOUTUBE_CHANNELS: YoutubeChannel[] = [
 // Per-run targets — how many of each type to publish per ingest.
 // Round-robin across sources means these spread across all outlets.
 // Dedup makes re-runs cheap (only new items hit the AI editorial engine).
-export const TARGET_NEWS     = 60;   // was 40; more sources need a higher cap
-export const TARGET_PODCASTS = 20;
-export const TARGET_CLIPS    = 12;
+// Kept low to fit within Render free-tier 512 MB — ingest runs every 3h so
+// smaller batches accumulate. Increase once you're on a paid instance.
+export const TARGET_NEWS     = 20;
+export const TARGET_PODCASTS = 8;
+export const TARGET_CLIPS    = 5;
 
 // How many recent items to pull from each source as candidates.
-export const PER_NEWS_FEED      = 10;
-export const PER_PODCAST_FEED   = 3;
-export const PER_YOUTUBE_CHANNEL = 10;
+export const PER_NEWS_FEED      = 5;
+export const PER_PODCAST_FEED   = 2;
+export const PER_YOUTUBE_CHANNEL = 5;
 
 export const MIN_PODCAST_DURATION_SEC = 300;
 export const MAX_PODCAST_DURATION_SEC = 4 * 60 * 60;

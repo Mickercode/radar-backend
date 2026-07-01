@@ -261,96 +261,114 @@ async function ingestNewsFromMediastack(stats: Stats, budget: { left: number }) 
 
 // ── RSS news (niche topics not covered by Mediastack) ─────────────────────────
 
-async function ingestNews(stats: Stats, budget: { left: number }) {
-  const groups: { source: string; topic: string; topicId: string; item: FeedItem }[][] = [];
-  for (const feed of NEWS_FEEDS) {
-    try {
-      const topicId = await getTopicId(feed.topic);
-      const parsed = await parser.parseURL(feed.url);
-      groups.push(
-        (parsed.items ?? []).slice(0, PER_NEWS_FEED).map((item) => ({ source: feed.source, topic: feed.topic, topicId, item })),
-      );
-    } catch (e) {
-      console.warn(`[ingest] news feed failed: ${feed.source}`, (e as Error).message);
-    }
+// Shuffle so different feeds get priority on different runs (provides variety
+// without needing an in-memory round-robin groups array that blows the heap).
+function shuffled<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j]!, a[i]!];
   }
+  return a;
+}
 
-  for (const c of roundRobin(groups)) {
+async function ingestNews(stats: Stats, budget: { left: number }) {
+  for (const feed of shuffled(NEWS_FEEDS)) {
     if (budget.left <= 0) break;
     if (!aiIsHealthy()) { console.warn('[ingest] AI circuit open — stopping RSS news ingest early'); break; }
-    const title = c.item.title?.trim();
-    if (!title) continue;
-    if (looksLikePromo(title)) { stats.skippedPromo++; continue; }
-    if (await alreadyHave(c.source, title)) continue;
 
-    const description = descriptionOf(c.item);
-    const s = await generateSummary(title, description, c.topic);
-    if (!s.relevant) { stats.skippedIrrelevant++; continue; }
-    if (s.tier === 3) { stats.skippedTier3++; continue; }
+    let items: FeedItem[];
+    try {
+      const parsed = await parser.parseURL(feed.url);
+      items = (parsed.items ?? []).slice(0, PER_NEWS_FEED);
+    } catch (e) {
+      console.warn(`[ingest] news feed failed: ${feed.source}`, (e as Error).message);
+      continue;
+    }
 
-    await prisma.content.create({
-      data: {
-        type: 'news', title, source: c.source,
-        duration: estimateReadTime(description),
-        thumbnailUrl: imageOf(c.item), articleUrl: c.item.link ?? null,
-        topicId: c.topicId, summary: { create: summaryData(s) },
-      },
-    });
-    stats.news++; budget.left--;
+    const topicId = await getTopicId(feed.topic);
+
+    for (const item of items) {
+      if (budget.left <= 0) break;
+      if (!aiIsHealthy()) break;
+      const title = item.title?.trim();
+      if (!title) continue;
+      if (looksLikePromo(title)) { stats.skippedPromo++; continue; }
+      if (await alreadyHave(feed.source, title)) continue;
+
+      const description = descriptionOf(item);
+      const s = await generateSummary(title, description, feed.topic);
+      if (!s.relevant) { stats.skippedIrrelevant++; continue; }
+      if (s.tier === 3) { stats.skippedTier3++; continue; }
+
+      await prisma.content.create({
+        data: {
+          type: 'news', title, source: feed.source,
+          duration: estimateReadTime(description),
+          thumbnailUrl: imageOf(item), articleUrl: item.link ?? null,
+          topicId, summary: { create: summaryData(s) },
+        },
+      });
+      stats.news++; budget.left--;
+    }
   }
 }
 
 // ── Podcasts ─────────────────────────────────────────────────────────────────
 
 async function ingestPodcasts(stats: Stats, budget: { left: number }) {
-  const groups: { source: string; topic: string; topicId: string; item: FeedItem }[][] = [];
-  for (const feed of PODCAST_FEEDS) {
-    try {
-      const topicId = await getTopicId(feed.topic);
-      const parsed = await parser.parseURL(feed.url);
-      groups.push(
-        (parsed.items ?? []).slice(0, PER_PODCAST_FEED).map((item) => ({ source: feed.source, topic: feed.topic, topicId, item })),
-      );
-    } catch (e) {
-      console.warn(`[ingest] podcast feed failed: ${feed.source}`, (e as Error).message);
-    }
-  }
-
-  for (const c of roundRobin(groups)) {
+  // Shuffle feeds so different shows surface on each 3-hour run without keeping
+  // all 36 parsed feeds in memory simultaneously (was causing OOM on free tier).
+  for (const feed of shuffled(PODCAST_FEEDS)) {
     if (budget.left <= 0) break;
     if (!aiIsHealthy()) { console.warn('[ingest] AI circuit open — stopping podcast ingest early'); break; }
-    const title = c.item.title?.trim();
-    if (!title) continue;
-    if (looksLikePromo(title)) { stats.skippedPromo++; continue; }
 
-    const duration = parseItunesDuration(c.item.itunes?.duration) ?? 1800;
-    if (duration < MIN_PODCAST_DURATION_SEC || duration > MAX_PODCAST_DURATION_SEC) { stats.skippedDuration++; continue; }
-
-    // Skip podcasts older than MAX_PODCAST_AGE_DAYS (0-2 weeks rule).
-    if (c.item.isoDate) {
-      const ageDays = (Date.now() - new Date(c.item.isoDate).getTime()) / 86_400_000;
-      if (ageDays > MAX_PODCAST_AGE_DAYS) { stats.skippedDuration++; continue; }
+    let items: FeedItem[];
+    try {
+      const parsed = await parser.parseURL(feed.url);
+      items = (parsed.items ?? []).slice(0, PER_PODCAST_FEED);
+    } catch (e) {
+      console.warn(`[ingest] podcast feed failed: ${feed.source}`, (e as Error).message);
+      continue;
     }
 
-    if (await alreadyHave(c.source, title)) continue;
+    const topicId = await getTopicId(feed.topic);
 
-    const description = descriptionOf(c.item);
-    const s = await generateSummary(title, description, c.topic);
-    if (!s.relevant) { stats.skippedIrrelevant++; continue; }
-    if (s.tier === 3) { stats.skippedTier3++; continue; }
+    for (const item of items) {
+      if (budget.left <= 0) break;
+      if (!aiIsHealthy()) break;
+      const title = item.title?.trim();
+      if (!title) continue;
+      if (looksLikePromo(title)) { stats.skippedPromo++; continue; }
 
-    const created = await prisma.content.create({
-      data: {
-        type: 'podcast', title, source: c.source, duration,
-        thumbnailUrl: imageOf(c.item), audioUrl: c.item.enclosure?.url ?? null,
-        topicId: c.topicId, summary: { create: summaryData(s) },
-      },
-      select: { id: true },
-    });
-    const moments = synthesizeMoments(duration).map((m) => ({ contentId: created.id, ...m }));
-    if (moments.length) await prisma.keyMoment.createMany({ data: moments });
+      const duration = parseItunesDuration(item.itunes?.duration) ?? 1800;
+      if (duration < MIN_PODCAST_DURATION_SEC || duration > MAX_PODCAST_DURATION_SEC) { stats.skippedDuration++; continue; }
 
-    stats.podcasts++; budget.left--;
+      if (item.isoDate) {
+        const ageDays = (Date.now() - new Date(item.isoDate).getTime()) / 86_400_000;
+        if (ageDays > MAX_PODCAST_AGE_DAYS) { stats.skippedDuration++; continue; }
+      }
+
+      if (await alreadyHave(feed.source, title)) continue;
+
+      const description = descriptionOf(item);
+      const s = await generateSummary(title, description, feed.topic);
+      if (!s.relevant) { stats.skippedIrrelevant++; continue; }
+      if (s.tier === 3) { stats.skippedTier3++; continue; }
+
+      const created = await prisma.content.create({
+        data: {
+          type: 'podcast', title, source: feed.source, duration,
+          thumbnailUrl: imageOf(item), audioUrl: item.enclosure?.url ?? null,
+          topicId, summary: { create: summaryData(s) },
+        },
+        select: { id: true },
+      });
+      const moments = synthesizeMoments(duration).map((m) => ({ contentId: created.id, ...m }));
+      if (moments.length) await prisma.keyMoment.createMany({ data: moments });
+
+      stats.podcasts++; budget.left--;
+    }
   }
 }
 
