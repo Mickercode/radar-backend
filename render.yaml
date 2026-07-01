@@ -35,6 +35,8 @@ services:
       # Comma-separated emails allowed to access GET /admin/stats.
       - key: ADMIN_EMAILS
         sync: false
+      - key: MEDIASTACK_API_KEY
+        sync: false
 
   # Ingestion worker — pulls RSS/podcasts → Claude editorial engine → feed.
   # Runs every 3 hours. Dedup by (source,title) keeps re-runs cheap — only new
@@ -58,6 +60,8 @@ services:
           name: radar-db
           property: connectionString
       - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: MEDIASTACK_API_KEY
         sync: false
       # Optional — only needed for YouTube clip ingestion (durations).
       - key: GOOGLE_API_KEY

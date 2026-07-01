@@ -159,10 +159,108 @@ interface Stats {
   skippedPromo: number; skippedDuration: number; skippedIrrelevant: number; skippedTier3: number;
 }
 
-// ── News ─────────────────────────────────────────────────────────────────────
+// ── Mediastack news ───────────────────────────────────────────────────────────
+
+interface MediastackArticle {
+  title: string;
+  description: string | null;
+  url: string;
+  source: string;
+  image: string | null;
+  category: string;
+  country: string;
+  published_at: string;
+}
+
+// Mediastack category → our topic slug
+const MS_CATEGORY_TO_TOPIC: Record<string, string> = {
+  general:       'politics',
+  business:      'economy',
+  technology:    'tech',
+  entertainment: 'music',
+  health:        'health',
+  science:       'science',
+  sports:        'sports',
+};
+
+async function fetchMediastack(params: Record<string, string>): Promise<MediastackArticle[]> {
+  const apiKey = process.env.MEDIASTACK_API_KEY;
+  if (!apiKey) return [];
+  const qs = new URLSearchParams({ access_key: apiKey, languages: 'en', limit: '100', sort: 'published_desc', ...params });
+  try {
+    // Free-tier Mediastack is HTTP-only. Paid plans support HTTPS.
+    const res = await fetch(`https://api.mediastack.com/v1/news?${qs}`);
+    if (!res.ok) {
+      console.warn(`[ingest] Mediastack ${res.status} for params`, params);
+      return [];
+    }
+    const data = (await res.json()) as { data?: MediastackArticle[] };
+    return data.data ?? [];
+  } catch (e) {
+    console.warn('[ingest] Mediastack fetch error:', (e as Error).message);
+    return [];
+  }
+}
+
+async function ingestNewsFromMediastack(stats: Stats, budget: { left: number }) {
+  if (!process.env.MEDIASTACK_API_KEY) {
+    console.log('[ingest] MEDIASTACK_API_KEY not set — skipping Mediastack news');
+    return;
+  }
+
+  const categories = Object.keys(MS_CATEGORY_TO_TOPIC).join(',');
+
+  // Two requests: Nigeria-first, then broader Africa for signal.
+  const [ngArticles, africaArticles] = await Promise.all([
+    fetchMediastack({ countries: 'ng', categories }),
+    fetchMediastack({ countries: 'gh,ke,za,eg', categories: 'business,technology,general', limit: '50' }),
+  ]);
+
+  const all = [...ngArticles, ...africaArticles];
+  console.log(`[ingest] Mediastack: ${ngArticles.length} Nigeria + ${africaArticles.length} Africa articles`);
+
+  // Round-robin by category so topics interleave evenly.
+  const byCategory: Record<string, MediastackArticle[]> = {};
+  for (const a of all) {
+    if (a.title) (byCategory[a.category] ??= []).push(a);
+  }
+  const candidates = roundRobin(Object.values(byCategory));
+
+  for (const article of candidates) {
+    if (budget.left <= 0) break;
+    const title = article.title?.trim();
+    if (!title) continue;
+    if (looksLikePromo(title)) { stats.skippedPromo++; continue; }
+
+    const source = article.source || 'Unknown';
+    if (await alreadyHave(source, title)) continue;
+
+    const topic = MS_CATEGORY_TO_TOPIC[article.category] ?? 'politics';
+    const topicId = await getTopicId(topic);
+    const description = article.description ?? '';
+
+    const s = await generateSummary(title, description, topic);
+    if (!s.relevant) { stats.skippedIrrelevant++; continue; }
+    if (s.tier === 3) { stats.skippedTier3++; continue; }
+
+    await prisma.content.create({
+      data: {
+        type: 'news', title, source,
+        duration: estimateReadTime(description),
+        thumbnailUrl: article.image ?? null,
+        articleUrl: article.url ?? null,
+        topicId,
+        summary: { create: summaryData(s) },
+      },
+    });
+    stats.news++;
+    budget.left--;
+  }
+}
+
+// ── RSS news (niche topics not covered by Mediastack) ─────────────────────────
 
 async function ingestNews(stats: Stats, budget: { left: number }) {
-  // Gather candidates per feed, then round-robin so sources interleave.
   const groups: { source: string; topic: string; topicId: string; item: FeedItem }[][] = [];
   for (const feed of NEWS_FEEDS) {
     try {
@@ -375,7 +473,11 @@ export async function runIngest() {
     skippedPromo: 0, skippedDuration: 0, skippedIrrelevant: 0, skippedTier3: 0,
   };
 
-  await ingestNews(stats, { left: TARGET_NEWS });
+  // Mediastack is the primary news source; RSS supplements niche topics.
+  const newsBudget = { left: TARGET_NEWS };
+  await ingestNewsFromMediastack(stats, newsBudget);
+  if (newsBudget.left > 0) await ingestNews(stats, newsBudget);
+
   await ingestPodcasts(stats, { left: TARGET_PODCASTS });
   await ingestClips(stats, { left: TARGET_CLIPS });
 

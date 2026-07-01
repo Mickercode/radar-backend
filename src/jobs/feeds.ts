@@ -9,47 +9,23 @@ export interface NewsFeed {
   topic: string;
 }
 
+// Mediastack API covers general, business, technology, entertainment, health,
+// science, and sports for Nigeria + broader Africa. These RSS feeds supplement
+// for niche topics Mediastack doesn't have great coverage for: Nollywood/film,
+// fashion, travel, faith, education, and specialist Nigerian tech/economy voices.
 export const NEWS_FEEDS: NewsFeed[] = [
 
-  // ── Nigerian Politics ─────────────────────────────────────────────────────
-  { url: 'https://www.premiumtimesng.com/feed',             source: 'Premium Times',          topic: 'politics'     },
-  { url: 'https://www.vanguardngr.com/feed/',               source: 'Vanguard',               topic: 'politics'     },
-  { url: 'https://dailypost.ng/feed/',                      source: 'Daily Post',             topic: 'politics'     },
-  { url: 'https://punchng.com/feed/',                       source: 'Punch NG',               topic: 'politics'     },
-  { url: 'https://dailytrust.com/feed/',                    source: 'Daily Trust',            topic: 'politics'     },
-  { url: 'https://saharareporters.com/rss.xml',             source: 'Sahara Reporters',       topic: 'politics'     },
-  { url: 'https://leadership.ng/feed/',                     source: 'Leadership NG',          topic: 'politics'     },
-
-  // ── Nigerian Economy (dedicated topic) ───────────────────────────────────
-  { url: 'https://nairametrics.com/feed/',                  source: 'Nairametrics',           topic: 'economy'      },
-  { url: 'https://punchng.com/topics/business/feed',        source: 'Punch Business',         topic: 'economy'      },
-  { url: 'https://www.premiumtimesng.com/business/feed',    source: 'Premium Times Business', topic: 'economy'      },
-  { url: 'https://www.vanguardngr.com/category/business/feed/', source: 'Vanguard Business',  topic: 'economy'      },
-
-  // ── Nigerian Finance ──────────────────────────────────────────────────────
-  { url: 'https://businessday.ng/feed/',                    source: 'BusinessDay NG',         topic: 'finance'      },
-  { url: 'https://techpoint.africa/feed/',                  source: 'TechPoint Africa',       topic: 'business'     },
-
-  // ── Nigerian Sports ───────────────────────────────────────────────────────
-  { url: 'https://punchng.com/topics/sports/feed',          source: 'Punch Sports',           topic: 'sports'       },
-  { url: 'https://www.completesports.com/feed/',            source: 'Complete Sports NG',     topic: 'sports'       },
-  { url: 'https://www.vanguardngr.com/category/sports/feed/', source: 'Vanguard Sports',      topic: 'sports'       },
-  { url: 'https://feeds.bbci.co.uk/sport/rss.xml',          source: 'BBC Sport',              topic: 'sports'       },
-  { url: 'https://soccernet.ng/feed/',                      source: 'Soccernet NG',           topic: 'sports'       },
-
-  // ── Nigerian Entertainment / Music ────────────────────────────────────────
-  { url: 'https://www.premiumtimesng.com/entertainment/feed', source: 'Premium Times Entertainment', topic: 'music' },
-  { url: 'https://punchng.com/topics/entertainment/feed',   source: 'Punch Entertainment',    topic: 'music'        },
-  { url: 'https://www.notjustok.com/feed/',                 source: 'NotJustOk',              topic: 'music'        },
-  { url: 'https://www.bellanaija.com/music/feed/',          source: 'BellaNaija Music',       topic: 'music'        },
-
-  // ── Nigerian Health ───────────────────────────────────────────────────────
-  { url: 'https://punchng.com/topics/health/feed',          source: 'Punch Health',           topic: 'health'       },
-  { url: 'https://www.vanguardngr.com/category/health/feed/', source: 'Vanguard Health',      topic: 'health'       },
-
-  // ── Nigerian Tech ─────────────────────────────────────────────────────────
+  // ── Nigerian Tech (specialist voices not always in Mediastack) ───────────
   { url: 'https://techcabal.com/feed/',                     source: 'TechCabal',              topic: 'tech'         },
   { url: 'https://techpoint.africa/feed/',                  source: 'TechPoint Africa',       topic: 'tech'         },
+
+  // ── Nigerian Economy (specialist financial voices) ───────────────────────
+  { url: 'https://nairametrics.com/feed/',                  source: 'Nairametrics',           topic: 'economy'      },
+  { url: 'https://businessday.ng/feed/',                    source: 'BusinessDay NG',         topic: 'finance'      },
+
+  // ── Nigerian Music (Afrobeats-specific) ──────────────────────────────────
+  { url: 'https://www.notjustok.com/feed/',                 source: 'NotJustOk',              topic: 'music'        },
+  { url: 'https://www.bellanaija.com/music/feed/',          source: 'BellaNaija Music',       topic: 'music'        },
 
   // ── Nigerian Film / Nollywood ─────────────────────────────────────────────
   { url: 'https://www.bellanaija.com/entertainment/feed/',  source: 'BellaNaija Entertainment', topic: 'film'       },
@@ -59,27 +35,20 @@ export const NEWS_FEEDS: NewsFeed[] = [
   { url: 'https://www.bellanaija.com/lifestyle/feed/',      source: 'BellaNaija Lifestyle',   topic: 'fashion'      },
   { url: 'https://www.bellanaija.com/beauty/feed/',         source: 'BellaNaija Beauty',      topic: 'fashion'      },
 
-  // ── Nigerian Travel ───────────────────────────────────────────────────────
+  // ── Travel ────────────────────────────────────────────────────────────────
   { url: 'https://www.travelnoire.com/feed/',               source: 'Travel Noire',           topic: 'travel'       },
+  { url: 'https://rss.nytimes.com/services/xml/rss/nyt/Travel.xml', source: 'NY Times Travel', topic: 'travel'     },
 
-  // ── International — Africa focus ─────────────────────────────────────────
-  // Only shown when Africa-relevant (editorial AI's nigeria_relevance filters noise).
-  { url: 'https://feeds.bbci.co.uk/news/world/africa/rss.xml', source: 'BBC Africa',         topic: 'politics'     },
-  { url: 'https://www.aljazeera.com/xml/rss/all.xml',       source: 'Al Jazeera',            topic: 'politics'     },
-  { url: 'https://feeds.bbci.co.uk/news/business/rss.xml',  source: 'BBC Business',          topic: 'finance'      },
-  { url: 'https://feeds.bbci.co.uk/news/technology/rss.xml', source: 'BBC Technology',       topic: 'tech'         },
-  { url: 'https://feeds.bbci.co.uk/news/science_and_environment/rss.xml', source: 'BBC Science', topic: 'science'  },
-  { url: 'https://feeds.bbci.co.uk/news/health/rss.xml',    source: 'BBC Health',            topic: 'health'       },
+  // ── Education ─────────────────────────────────────────────────────────────
   { url: 'https://feeds.bbci.co.uk/news/education/rss.xml', source: 'BBC Education',         topic: 'education'    },
-  { url: 'https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml', source: 'BBC Arts', topic: 'film'         },
+  { url: 'https://rss.nytimes.com/services/xml/rss/nyt/Education.xml', source: 'NY Times Education', topic: 'education' },
 
-  // Global tech / business (only Nigeria-touching items survive Tier-3 filter)
-  { url: 'https://techcrunch.com/feed/',                    source: 'TechCrunch',            topic: 'business'     },
-  { url: 'https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml', source: 'NY Times Tech', topic: 'tech'    },
-  { url: 'https://rss.nytimes.com/services/xml/rss/nyt/Climate.xml',    source: 'NY Times Climate', topic: 'climate' },
-  { url: 'https://rss.nytimes.com/services/xml/rss/nyt/Movies.xml',     source: 'NY Times Movies', topic: 'film'  },
-  { url: 'https://rss.nytimes.com/services/xml/rss/nyt/Travel.xml',     source: 'NY Times Travel', topic: 'travel' },
-  { url: 'https://rss.nytimes.com/services/xml/rss/nyt/Education.xml',  source: 'NY Times Education', topic: 'education' },
+  // ── Climate ───────────────────────────────────────────────────────────────
+  { url: 'https://rss.nytimes.com/services/xml/rss/nyt/Climate.xml', source: 'NY Times Climate', topic: 'climate'  },
+
+  // ── Sports supplement (Nigerian football-specific) ────────────────────────
+  { url: 'https://www.completesports.com/feed/',            source: 'Complete Sports NG',     topic: 'sports'       },
+  { url: 'https://soccernet.ng/feed/',                      source: 'Soccernet NG',           topic: 'sports'       },
 ];
 
 export const PODCAST_FEEDS: NewsFeed[] = [
