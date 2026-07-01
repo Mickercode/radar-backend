@@ -25,6 +25,7 @@ type ContentWithRelations = Content & {
   topic?: Topic | null;
 };
 
+
 export function toSummary(s: Summary) {
   return {
     id: s.id,
@@ -55,6 +56,7 @@ export function toContentItem(c: ContentWithRelations) {
     externalId: c.externalId ?? undefined,
     aspectRatio: toNum(c.aspectRatio),
     topicId: c.topicId,
+    topicSlug: c.topic?.slug ?? undefined,
     createdAt: c.createdAt.toISOString(),
     summary: c.summary ? toSummary(c.summary) : undefined,
   };

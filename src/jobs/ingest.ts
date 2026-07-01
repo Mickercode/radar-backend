@@ -406,6 +406,7 @@ async function ingestClips(stats: Stats, budget: { left: number }) {
     try {
       const topicId = await getTopicId(ch.topic);
       const parsed = await ytParser.parseURL(`https://www.youtube.com/feeds/videos.xml?channel_id=${ch.channelId}`);
+      console.log(`[ingest] youtube ${ch.source}: ${parsed.items?.length ?? 0} videos found`);
       const cands = (parsed.items ?? [])
         .slice(0, PER_YOUTUBE_CHANNEL)
         .map((it) => ({

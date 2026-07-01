@@ -87,7 +87,7 @@ export async function getFeed(topicIds: string[], country?: string, interests: s
     // Fetch more candidates so after ranking we can return a full 40.
     const rows = await prisma.content.findMany({
       where: { topicId: { in: allTopicIds } },
-      include: { summary: true },
+      include: { summary: true, topic: true },
       orderBy: { createdAt: 'desc' },
       take: 80,
     });
@@ -123,7 +123,7 @@ export async function getFeed(topicIds: string[], country?: string, interests: s
   // "For You" is sparse (new user with one narrow topic, or DB just started).
   // Top up with the global feed so the first screen is never blank.
   const rows = await prisma.content.findMany({
-    include: { summary: true },
+    include: { summary: true, topic: true },
     orderBy: { createdAt: 'desc' },
     take: 80,
   });

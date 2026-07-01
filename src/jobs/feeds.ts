@@ -115,24 +115,20 @@ export interface YoutubeChannel {
   topic: string;
 }
 
+// Channel IDs: find them at youtube.com/@ChannelName → About → Share → Copy channel ID
 export const YOUTUBE_CHANNELS: YoutubeChannel[] = [
-  // ── Nigerian / African news & commentary ─────────────────────────────────
-  { channelId: 'UCHFg-zMGCkmqGubWbXMVNBw', source: 'Channels TV',        topic: 'politics'  },
-  { channelId: 'UC3NfVCBVQntA6yMjPsXs4XQ', source: 'TVC News Nigeria',   topic: 'politics'  },
-  { channelId: 'UCBGthV6XQMlYi3mP9cGqFBw', source: 'Arise News',         topic: 'politics'  },
-  { channelId: 'UCivCVMIAuSxjKXU1_v_MBqQ', source: 'NTA Network',        topic: 'politics'  },
-
-  // ── African business & tech ───────────────────────────────────────────────
-  { channelId: 'UCsBjURrPoezykLs9EqgamOA', source: 'Fireship',           topic: 'tech'      },
-  { channelId: 'UCIALMKvObZNtJ6AmdCLP7Lg', source: 'Bloomberg',          topic: 'economy'   },
-  { channelId: 'UCCjyq_K1Xwfg8Lndy7lKMpA', source: 'TechCrunch',        topic: 'tech'      },
-
-  // ── African music & entertainment ─────────────────────────────────────────
-  { channelId: 'UCM3XMHbYXMM3I6vM2GHKdBQ', source: 'NotJustOk TV',      topic: 'music'     },
-  { channelId: 'UCzwe5EqNBbhkGPkh1Z_Ps5g', source: 'Audiomack Africa',   topic: 'music'     },
-
-  // ── Sports ────────────────────────────────────────────────────────────────
-  { channelId: 'UCqZQlzSHbVJrwrn5XvzrzcA', source: 'ESPN FC',            topic: 'sports'    },
+  // ── Verified global channels ──────────────────────────────────────────────
+  { channelId: 'UCsBjURrPoezykLs9EqgamOA', source: 'Fireship',       topic: 'tech'      },
+  { channelId: 'UCIALMKvObZNtJ6AmdCLP7Lg', source: 'Bloomberg',      topic: 'economy'   },
+  { channelId: 'UCCjyq_K1Xwfg8Lndy7lKMpA', source: 'TechCrunch',    topic: 'tech'      },
+  { channelId: 'UCJIfeSCssxSC_Dhc5s7woww', source: 'Lex Clips',      topic: 'tech'      },
+  { channelId: 'UCnUYZLuoy1rq1aVMwx4aTzw', source: 'GQ',             topic: 'fashion'   },
+  { channelId: 'UCqZQlzSHbVJrwrn5XvzrzcA', source: 'ESPN FC',        topic: 'sports'    },
+  { channelId: 'UCWX3yGbODI3LMbxoFpBUPnQ', source: 'Al Jazeera Eng', topic: 'politics'  },
+  // ── Add Nigerian channel IDs below (get from youtube.com/@channel → About) ─
+  // { channelId: 'PASTE_CHANNELS_TV_ID',   source: 'Channels TV',    topic: 'politics'  },
+  // { channelId: 'PASTE_TVC_NEWS_ID',      source: 'TVC News',       topic: 'politics'  },
+  // { channelId: 'PASTE_NOTJUSTOK_ID',     source: 'NotJustOk TV',   topic: 'music'     },
 ];
 
 // Per-run targets — how many of each type to publish per ingest.
