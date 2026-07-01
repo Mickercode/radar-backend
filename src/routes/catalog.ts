@@ -92,7 +92,7 @@ catalogRouter.get(
     if (ids.length > 0) {
       const rows = await prisma.content.findMany({
         where: { id: { in: ids } },
-        include: { summary: true, topic: true },
+        include: { summary: true },
       });
       res.json(rows.map(toContentItem));
       return;
@@ -102,7 +102,7 @@ catalogRouter.get(
       const type = contentType.parse(req.query.type);
       const rows = await prisma.content.findMany({
         where: { type },
-        include: { summary: true, topic: true },
+        include: { summary: true },
         orderBy: { createdAt: 'desc' },
         take: 20,
       });

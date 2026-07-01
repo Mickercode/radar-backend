@@ -56,7 +56,6 @@ export function toContentItem(c: ContentWithRelations) {
     externalId: c.externalId ?? undefined,
     aspectRatio: toNum(c.aspectRatio),
     topicId: c.topicId,
-    topicSlug: c.topic?.slug ?? undefined,
     createdAt: c.createdAt.toISOString(),
     summary: c.summary ? toSummary(c.summary) : undefined,
   };
