@@ -63,6 +63,8 @@ services:
         sync: false
       - key: MEDIASTACK_API_KEY
         sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
       # Optional — only needed for YouTube clip ingestion (durations).
       - key: GOOGLE_API_KEY
         sync: false

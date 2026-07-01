@@ -116,11 +116,23 @@ export interface YoutubeChannel {
 }
 
 export const YOUTUBE_CHANNELS: YoutubeChannel[] = [
-  { channelId: 'UCsBjURrPoezykLs9EqgamOA', source: 'Fireship',         topic: 'tech'      },
-  { channelId: 'UCIALMKvObZNtJ6AmdCLP7Lg', source: 'Bloomberg',        topic: 'business'  },
-  { channelId: 'UCCjyq_K1Xwfg8Lndy7lKMpA', source: 'TechCrunch Video', topic: 'startups'  },
-  { channelId: 'UCJIfeSCssxSC_Dhc5s7woww', source: 'Lex Clips',        topic: 'ai'        },
-  { channelId: 'UCUHW94eEFW7hkUMVaZz4eDg', source: 'MinutePhysics',    topic: 'science'   },
+  // ── Nigerian / African news & commentary ─────────────────────────────────
+  { channelId: 'UCHFg-zMGCkmqGubWbXMVNBw', source: 'Channels TV',        topic: 'politics'  },
+  { channelId: 'UC3NfVCBVQntA6yMjPsXs4XQ', source: 'TVC News Nigeria',   topic: 'politics'  },
+  { channelId: 'UCBGthV6XQMlYi3mP9cGqFBw', source: 'Arise News',         topic: 'politics'  },
+  { channelId: 'UCivCVMIAuSxjKXU1_v_MBqQ', source: 'NTA Network',        topic: 'politics'  },
+
+  // ── African business & tech ───────────────────────────────────────────────
+  { channelId: 'UCsBjURrPoezykLs9EqgamOA', source: 'Fireship',           topic: 'tech'      },
+  { channelId: 'UCIALMKvObZNtJ6AmdCLP7Lg', source: 'Bloomberg',          topic: 'economy'   },
+  { channelId: 'UCCjyq_K1Xwfg8Lndy7lKMpA', source: 'TechCrunch',        topic: 'tech'      },
+
+  // ── African music & entertainment ─────────────────────────────────────────
+  { channelId: 'UCM3XMHbYXMM3I6vM2GHKdBQ', source: 'NotJustOk TV',      topic: 'music'     },
+  { channelId: 'UCzwe5EqNBbhkGPkh1Z_Ps5g', source: 'Audiomack Africa',   topic: 'music'     },
+
+  // ── Sports ────────────────────────────────────────────────────────────────
+  { channelId: 'UCqZQlzSHbVJrwrn5XvzrzcA', source: 'ESPN FC',            topic: 'sports'    },
 ];
 
 // Per-run targets — how many of each type to publish per ingest.
@@ -137,8 +149,8 @@ export const PER_YOUTUBE_CHANNEL = 10;
 
 export const MIN_PODCAST_DURATION_SEC = 300;
 export const MAX_PODCAST_DURATION_SEC = 4 * 60 * 60;
-export const MIN_CLIP_DURATION_SEC    = 15;
-export const MAX_CLIP_DURATION_SEC    = 60;
+export const MIN_CLIP_DURATION_SEC    = 60;       // at least 1 minute
+export const MAX_CLIP_DURATION_SEC    = 20 * 60;  // up to 20 minutes
 export const MAX_PODCAST_AGE_DAYS     = 14;
 
 export const PROMO_TITLE_PATTERNS: RegExp[] = [

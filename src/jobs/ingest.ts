@@ -391,17 +391,16 @@ const ytParser: Parser<unknown, YtItem> = new Parser({
 });
 
 async function ingestClips(stats: Stats, budget: { left: number }) {
-  const apiKey = process.env.GOOGLE_API_KEY;
-  if (!apiKey) {
-    console.log('[ingest] GOOGLE_API_KEY not set — skipping YouTube clips');
-    return;
+  const googleKey = process.env.GOOGLE_API_KEY;
+  if (!googleKey) {
+    console.log('[ingest] GOOGLE_API_KEY not set — clips will ingest without duration filtering');
   }
+
   interface ClipCand {
     source: string; topic: string; topicId: string;
     videoId: string; title: string; description: string; duration: number;
   }
 
-  // Gather fresh candidates across channels, then round-robin.
   const groups: ClipCand[][] = [];
   for (const ch of YOUTUBE_CHANNELS) {
     try {
@@ -425,12 +424,18 @@ async function ingestClips(stats: Stats, budget: { left: number }) {
       const fresh = cands.filter((c) => !seen.has(c.videoId));
       if (fresh.length === 0) continue;
 
-      const durations = await fetchDurations(fresh.map((c) => c.videoId), apiKey);
-      const kept: ClipCand[] = [];
-      for (const c of fresh) {
-        const d = durations.get(c.videoId) ?? 0;
-        if (d < MIN_CLIP_DURATION_SEC || d > MAX_CLIP_DURATION_SEC) { stats.skippedDuration++; continue; }
-        kept.push({ ...c, duration: d });
+      let kept: ClipCand[];
+      if (googleKey) {
+        const durations = await fetchDurations(fresh.map((c) => c.videoId), googleKey);
+        kept = [];
+        for (const c of fresh) {
+          const d = durations.get(c.videoId) ?? 0;
+          if (d < MIN_CLIP_DURATION_SEC || d > MAX_CLIP_DURATION_SEC) { stats.skippedDuration++; continue; }
+          kept.push({ ...c, duration: d });
+        }
+      } else {
+        // No API key — ingest all fresh videos with a default duration of 5 min.
+        kept = fresh.map((c) => ({ ...c, duration: 300 }));
       }
       if (kept.length) groups.push(kept);
     } catch (e) {

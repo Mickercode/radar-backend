@@ -31,6 +31,7 @@ const schema = z.object({
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   MEDIASTACK_API_KEY: z.string().optional(),
+  OPENROUTER_API_KEY: z.string().optional(),
   // Comma-separated admin emails — e.g. "you@gmail.com,ops@radar.ng".
   // Users in this list can access GET /admin/stats.
   ADMIN_EMAILS: z.string().default(''),
