@@ -1,25 +1,29 @@
 // Editorial Quality Engine (PLAYBOOK §4A / §9) for the ingestion job.
-// Claude 3.5 Sonnet scores each item, rewrites it as What-Why-Edge, and assigns
-// a tier. Tier 3 is dropped by the caller. Self-contained (reads env directly)
-// so the cron job doesn't pull the API's config/env.
+// Primary: OpenRouter/DeepSeek. Fallback: Claude. Circuit-breaker on billing errors.
 
-const CLAUDE_MODEL = 'claude-sonnet-4-6';
+const CLAUDE_MODEL    = 'claude-sonnet-4-6';
 const CLAUDE_ENDPOINT = 'https://api.anthropic.com/v1/messages';
-// ~4.5s floor (~13 RPM) — safely under Claude's rate limits.
-const MIN_CLAUDE_GAP_MS = 4500;
+const OR_MODEL        = 'deepseek/deepseek-chat-v3-5:free';
+const OR_ENDPOINT     = 'https://openrouter.ai/api/v1/chat/completions';
 
-let lastCallAt = 0;
+// Claude throttle — ~13 RPM cap. Not applied to OpenRouter.
+const MIN_CLAUDE_GAP_MS = 4500;
+let lastClaudeCallAt = 0;
+
+// Circuit breaker: once billing fails, skip Claude for the rest of this process run.
+let claudeBillingFailed = false;
+
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-async function throttle() {
-  const elapsed = Date.now() - lastCallAt;
+async function throttleClaude() {
+  const elapsed = Date.now() - lastClaudeCallAt;
   if (elapsed < MIN_CLAUDE_GAP_MS) await sleep(MIN_CLAUDE_GAP_MS - elapsed);
-  lastCallAt = Date.now();
+  lastClaudeCallAt = Date.now();
 }
 
 export interface SummaryResult {
   relevant: boolean;
-  what: string; 
+  what: string;
   key_takeaways: string[];
   why: string;
   how_it_matters_to_you: string;
@@ -32,9 +36,6 @@ export interface SummaryResult {
   tier: 1 | 2 | 3;
 }
 
-// On failure return a Tier-3 stub; the caller drops Tier 3, so a transient error
-// just defers the item to the next run (dedup hasn't fired). Better than
-// publishing a weak summary (§9: "publishing less" is the moat).
 function dropOnFailure(): SummaryResult {
   return {
     relevant: false, what: '', key_takeaways: [], why: '',
@@ -44,9 +45,30 @@ function dropOnFailure(): SummaryResult {
   };
 }
 
+function parseSummaryResult(p: Record<string, unknown>): SummaryResult | null {
+  if (typeof p?.what !== 'string' || typeof p?.why !== 'string' || typeof p?.tier !== 'number') return null;
+  const stripDash = (s: string) => s.trim().replace(/^[-•*]\s*/, '');
+  const raw = Array.isArray(p.key_takeaways) ? (p.key_takeaways as unknown[]).filter((k): k is string => typeof k === 'string') : [];
+  const glossaryRaw = Array.isArray(p.glossary) ? (p.glossary as unknown[]).filter((k): k is string => typeof k === 'string') : [];
+  const nigeria = Math.max(0, Math.min(3, Number(p.nigeria_relevance ?? 0))) as 0 | 1 | 2 | 3;
+  const tier = (p.tier === 1 || p.tier === 2 ? p.tier : 3) as 1 | 2 | 3;
+  return {
+    relevant: p.relevant !== false,
+    what: stripDash(String(p.what)),
+    key_takeaways: raw.length >= 2 ? raw.map(stripDash) : [stripDash(String(p.what)), stripDash(String(p.why))],
+    why: stripDash(String(p.why)),
+    how_it_matters_to_you: stripDash(String(p.how_it_matters_to_you ?? '')),
+    glossary: glossaryRaw,
+    forwardable: !!p.forwardable,
+    advantage: !!p.advantage,
+    non_obvious: !!p.non_obvious,
+    learnable: !!p.learnable,
+    nigeria_relevance: nigeria,
+    tier,
+  };
+}
+
 function buildPrompt(title: string, body: string, topic: string): string {
-  // 3-4 reader personas for each topic. Each persona becomes its own labelled
-  // paragraph in how_it_matters_to_you using the pattern "If you are a X: ..."
   const topicPersonas: Record<string, string[]> = {
     politics:   ['a normal citizen or family', 'a small business owner or trader', 'a student or young person', 'a community leader or landlord'],
     economy:    ['a salary earner or employee', 'a small business owner, trader, or market woman', 'a student or job seeker', 'a landlord or property owner'],
@@ -117,119 +139,153 @@ TIER:
 OUTPUT — strict JSON only: { "relevant", "what", "key_takeaways":[], "why", "how_it_matters_to_you", "glossary":[], "forwardable", "advantage", "non_obvious", "learnable", "nigeria_relevance", "tier" }`;
 }
 
-export async function generateSummary(
-  title: string,
-  description: string,
-  topic: string,
-): Promise<SummaryResult> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return dropOnFailure();
+// ── OpenRouter / DeepSeek ─────────────────────────────────────────────────────
 
-  const body = description.replace(/<[^>]*>/g, '').trim().slice(0, 2000);
-  if (body.length < 40) return dropOnFailure();
-
-  const SUMMARY_TOOL = {
-    name: 'generate_summary',
-    description: 'Generate an editorial summary with scoring for a content item',
-    input_schema: {
-      type: 'object',
-      properties: {
-        relevant: { type: 'boolean' },
-        what: { type: 'string' },
-        key_takeaways: { type: 'array', items: { type: 'string' } },
-        why: { type: 'string' },
-        how_it_matters_to_you: { type: 'string' },
-        glossary: { type: 'array', items: { type: 'string' } },
-        forwardable: { type: 'boolean' },
-        advantage: { type: 'boolean' },
-        non_obvious: { type: 'boolean' },
-        learnable: { type: 'boolean' },
-        nigeria_relevance: { type: 'integer', enum: [0, 1, 2, 3] },
-        tier: { type: 'integer', enum: [1, 2, 3] },
+async function callOpenRouter(prompt: string, apiKey: string): Promise<SummaryResult | null> {
+  try {
+    const res = await fetch(OR_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'HTTP-Referer': 'https://radarproapp.com',
+        'X-Title': 'Radar',
       },
-      required: ['relevant', 'what', 'key_takeaways', 'why', 'how_it_matters_to_you', 'glossary', 'forwardable', 'advantage', 'non_obvious', 'learnable', 'nigeria_relevance', 'tier'],
+      body: JSON.stringify({
+        model: OR_MODEL,
+        max_tokens: 1800,
+        temperature: 0.25,
+        response_format: { type: 'json_object' },
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a precise JSON generator. Respond with ONLY a valid JSON object. No markdown, no code fences, no explanation — raw JSON only.',
+          },
+          { role: 'user', content: prompt },
+        ],
+      }),
+    });
+
+    if (!res.ok) {
+      const errBody = (await res.text().catch(() => '')).slice(0, 200);
+      console.warn(`[editorial] OpenRouter ${res.status}: ${errBody}`);
+      return null;
+    }
+
+    const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
+    const raw = data.choices?.[0]?.message?.content ?? '';
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    return parseSummaryResult(parsed);
+  } catch (e) {
+    console.warn('[editorial] OpenRouter call threw:', (e as Error).message);
+    return null;
+  }
+}
+
+// ── Claude (fallback) ─────────────────────────────────────────────────────────
+
+const SUMMARY_TOOL = {
+  name: 'generate_summary',
+  description: 'Generate an editorial summary with scoring for a content item',
+  input_schema: {
+    type: 'object',
+    properties: {
+      relevant: { type: 'boolean' },
+      what: { type: 'string' },
+      key_takeaways: { type: 'array', items: { type: 'string' } },
+      why: { type: 'string' },
+      how_it_matters_to_you: { type: 'string' },
+      glossary: { type: 'array', items: { type: 'string' } },
+      forwardable: { type: 'boolean' },
+      advantage: { type: 'boolean' },
+      non_obvious: { type: 'boolean' },
+      learnable: { type: 'boolean' },
+      nigeria_relevance: { type: 'integer', enum: [0, 1, 2, 3] },
+      tier: { type: 'integer', enum: [1, 2, 3] },
     },
-  };
+    required: ['relevant', 'what', 'key_takeaways', 'why', 'how_it_matters_to_you', 'glossary', 'forwardable', 'advantage', 'non_obvious', 'learnable', 'nigeria_relevance', 'tier'],
+  },
+};
 
-  const payload = {
-    model: CLAUDE_MODEL,
-    max_tokens: 1800,
-    temperature: 0.25,
-    messages: [{ role: 'user', content: buildPrompt(title, body, topic) }],
-    tools: [SUMMARY_TOOL],
-    tool_choice: { type: 'tool', name: 'generate_summary' },
-  };
-
+async function callClaude(prompt: string, apiKey: string): Promise<SummaryResult | null> {
   for (let attempt = 0; attempt <= 1; attempt++) {
     try {
-      await throttle();
+      await throttleClaude();
       const res = await fetch(CLAUDE_ENDPOINT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'x-api-key': apiKey,
           'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'false',
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          model: CLAUDE_MODEL,
+          max_tokens: 1800,
+          temperature: 0.25,
+          messages: [{ role: 'user', content: prompt }],
+          tools: [SUMMARY_TOOL],
+          tool_choice: { type: 'tool', name: 'generate_summary' },
+        }),
       });
 
       if (!res.ok) {
-        const errBody = (await res.text().catch(() => '')).slice(0, 200).replace(/\s+/g, ' ');
-        const transient = res.status === 429 || res.status >= 500;
+        const errBody = (await res.text().catch(() => '')).slice(0, 300).replace(/\s+/g, ' ');
         console.warn(`[editorial] Claude ${res.status}: ${errBody}`);
+        // Billing error — trip the circuit breaker and bail immediately
+        if (res.status === 400 && errBody.includes('credit balance')) {
+          claudeBillingFailed = true;
+          return null;
+        }
+        const transient = res.status === 429 || res.status >= 500;
         if (transient && attempt === 0) {
           const retryAfter = parseInt(res.headers.get('retry-after') ?? '', 10);
           await sleep(Number.isFinite(retryAfter) ? retryAfter * 1000 : 3000);
           continue;
         }
-        return dropOnFailure();
+        return null;
       }
 
       const data = (await res.json()) as {
         content?: Array<{ type: string; name?: string; input?: Record<string, unknown> }>;
       };
       const toolUse = data.content?.find((c) => c.type === 'tool_use' && c.name === 'generate_summary');
-      if (!toolUse?.input) return dropOnFailure();
-
-      const p = toolUse.input;
-      if (
-        typeof p?.what !== 'string' || typeof p?.key_takeaways !== 'object' ||
-        typeof p?.why !== 'string' || typeof p?.how_it_matters_to_you !== 'string' ||
-        typeof p?.tier !== 'number'
-      ) {
-        return dropOnFailure();
-      }
-
-      const nigeria = Math.max(0, Math.min(3, Number(p.nigeria_relevance ?? 0))) as 0 | 1 | 2 | 3;
-      const tier = (p.tier === 1 || p.tier === 2 ? p.tier : 3) as 1 | 2 | 3;
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      const raw = Array.isArray(p.key_takeaways) ? p.key_takeaways.filter((k: unknown) => typeof k === 'string') : [];
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      const glossaryRaw = Array.isArray(p.glossary) ? p.glossary.filter((k: unknown) => typeof k === 'string') : [];
-      const stripDash = (s: string) => s.trim().replace(/^[-•*]\s*/, '');
-      return {
-        relevant: p.relevant !== false,
-        what: stripDash(String(p.what)),
-        key_takeaways: raw.length >= 2 ? raw.map(stripDash) : [stripDash(String(p.what)), stripDash(String(p.why))],
-        why: stripDash(String(p.why)),
-        how_it_matters_to_you: stripDash(String(p.how_it_matters_to_you)),
-        glossary: glossaryRaw,
-        forwardable: !!p.forwardable,
-        advantage: !!p.advantage,
-        non_obvious: !!p.non_obvious,
-        learnable: !!p.learnable,
-        nigeria_relevance: nigeria,
-        tier,
-      };
+      if (!toolUse?.input) return null;
+      return parseSummaryResult(toolUse.input);
     } catch (e) {
-      if (attempt === 0) {
-        await sleep(1000);
-        continue;
-      }
+      if (attempt === 0) { await sleep(1000); continue; }
       console.warn('[editorial] Claude call threw:', (e as Error).message);
-      return dropOnFailure();
+      return null;
     }
   }
+  return null;
+}
+
+// ── Public API ────────────────────────────────────────────────────────────────
+
+export async function generateSummary(
+  title: string,
+  description: string,
+  topic: string,
+): Promise<SummaryResult> {
+  const orKey  = process.env.OPENROUTER_API_KEY;
+  const claudeKey = process.env.ANTHROPIC_API_KEY;
+
+  const body = description.replace(/<[^>]*>/g, '').trim().slice(0, 2000);
+  if (body.length < 40) return dropOnFailure();
+
+  const prompt = buildPrompt(title, body, topic);
+
+  // Primary: OpenRouter/DeepSeek
+  if (orKey) {
+    const result = await callOpenRouter(prompt, orKey);
+    if (result) return result;
+  }
+
+  // Fallback: Claude (skip if billing already failed this run)
+  if (claudeKey && !claudeBillingFailed) {
+    const result = await callClaude(prompt, claudeKey);
+    if (result) return result;
+  }
+
   return dropOnFailure();
 }
