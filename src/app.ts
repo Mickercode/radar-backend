@@ -19,6 +19,7 @@ import { podcastsRouter } from './routes/podcasts';
 import { captureRouter } from './routes/capture';
 import { notesRouter } from './routes/notes';
 import { adminRouter } from './routes/admin';
+import { clipsRouter } from './routes/clips';
 import { errorHandler, notFoundHandler } from './middleware/error';
 
 export function createApp() {
@@ -60,6 +61,7 @@ export function createApp() {
   // /insights). Needs GEMINI_API_KEY; routes 503 cleanly without it.
   app.use(captureRouter);
   app.use(adminRouter);
+  app.use(clipsRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
