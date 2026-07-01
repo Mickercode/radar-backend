@@ -7,7 +7,7 @@ const CLAUDE_ENDPOINT = 'https://api.anthropic.com/v1/messages';
 
 function apiKey(): string {
   if (!env.ANTHROPIC_API_KEY) {
-    throw new ApiError(503, 'ANTHROPIC_API_KEY is not configured');
+    throw new ApiError(503, 'AI service is temporarily unavailable. Please try again later.');
   }
   return env.ANTHROPIC_API_KEY;
 }
