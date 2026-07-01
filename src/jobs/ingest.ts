@@ -466,6 +466,12 @@ export async function runIngest() {
   } else {
     console.log('[ingest] ANTHROPIC_API_KEY present ✓');
   }
+  const msKey = process.env.MEDIASTACK_API_KEY;
+  if (!msKey) {
+    console.warn('[ingest] MEDIASTACK_API_KEY not found in process.env — news will fall back to RSS only');
+  } else {
+    console.log(`[ingest] MEDIASTACK_API_KEY present ✓ (${msKey.slice(0, 4)}****)`);
+  }
   console.log(`[ingest] targets — news=${TARGET_NEWS} podcasts=${TARGET_PODCASTS} clips=${TARGET_CLIPS}`);
 
   const stats: Stats = {
