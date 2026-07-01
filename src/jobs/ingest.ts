@@ -240,18 +240,23 @@ async function ingestNewsFromMediastack(stats: Stats, budget: { left: number }) 
     if (!s.relevant) { stats.skippedIrrelevant++; continue; }
     if (s.tier === 3) { stats.skippedTier3++; continue; }
 
-    await prisma.content.create({
-      data: {
-        type: 'news', title, source,
-        duration: estimateReadTime(description),
-        thumbnailUrl: article.image ?? null,
-        articleUrl: article.url ?? null,
-        topicId,
-        summary: { create: summaryData(s) },
-      },
-    });
-    stats.news++;
-    budget.left--;
+    try {
+      await prisma.content.create({
+        data: {
+          type: 'news', title, source,
+          duration: estimateReadTime(description),
+          thumbnailUrl: article.image ?? null,
+          articleUrl: article.url ?? null,
+          topicId,
+          summary: { create: summaryData(s) },
+        },
+      });
+      stats.news++;
+      budget.left--;
+    } catch (e) {
+      if ((e as { code?: string }).code === 'P2002') continue;
+      throw e;
+    }
   }
 }
 
@@ -297,15 +302,20 @@ async function ingestNews(stats: Stats, budget: { left: number }) {
       if (!s.relevant) { stats.skippedIrrelevant++; continue; }
       if (s.tier === 3) { stats.skippedTier3++; continue; }
 
-      await prisma.content.create({
-        data: {
-          type: 'news', title, source: feed.source,
-          duration: estimateReadTime(description),
-          thumbnailUrl: imageOf(item), articleUrl: item.link ?? null,
-          topicId, summary: { create: summaryData(s) },
-        },
-      });
-      stats.news++; budget.left--;
+      try {
+        await prisma.content.create({
+          data: {
+            type: 'news', title, source: feed.source,
+            duration: estimateReadTime(description),
+            thumbnailUrl: imageOf(item), articleUrl: item.link ?? null,
+            topicId, summary: { create: summaryData(s) },
+          },
+        });
+        stats.news++; budget.left--;
+      } catch (e) {
+        if ((e as { code?: string }).code === 'P2002') continue;
+        throw e;
+      }
     }
   }
 }
@@ -352,14 +362,20 @@ async function ingestPodcasts(stats: Stats, budget: { left: number }) {
       if (!s.relevant) { stats.skippedIrrelevant++; continue; }
       if (s.tier === 3) { stats.skippedTier3++; continue; }
 
-      const created = await prisma.content.create({
-        data: {
-          type: 'podcast', title, source: feed.source, duration,
-          thumbnailUrl: imageOf(item), audioUrl: item.enclosure?.url ?? null,
-          topicId, summary: { create: summaryData(s) },
-        },
-        select: { id: true },
-      });
+      let created: { id: string };
+      try {
+        created = await prisma.content.create({
+          data: {
+            type: 'podcast', title, source: feed.source, duration,
+            thumbnailUrl: imageOf(item), audioUrl: item.enclosure?.url ?? null,
+            topicId, summary: { create: summaryData(s) },
+          },
+          select: { id: true },
+        });
+      } catch (e) {
+        if ((e as { code?: string }).code === 'P2002') continue;
+        throw e;
+      }
       const moments = synthesizeMoments(duration).map((m) => ({ contentId: created.id, ...m }));
       if (moments.length) await prisma.keyMoment.createMany({ data: moments });
 
@@ -469,16 +485,21 @@ async function ingestClips(stats: Stats, budget: { left: number }) {
     if (!s.relevant) { stats.skippedIrrelevant++; continue; }
     if (s.tier === 3) { stats.skippedTier3++; continue; }
 
-    await prisma.content.create({
-      data: {
-        type: 'clip', title: c.title, source: c.source, duration: c.duration,
-        thumbnailUrl: `https://i.ytimg.com/vi/${c.videoId}/hqdefault.jpg`,
-        videoUrl: `https://www.youtube.com/watch?v=${c.videoId}`,
-        externalId: c.videoId, aspectRatio: 0.5625, topicId: c.topicId,
-        summary: { create: summaryData(s) },
-      },
-    });
-    stats.clips++; budget.left--;
+    try {
+      await prisma.content.create({
+        data: {
+          type: 'clip', title: c.title, source: c.source, duration: c.duration,
+          thumbnailUrl: `https://i.ytimg.com/vi/${c.videoId}/hqdefault.jpg`,
+          videoUrl: `https://www.youtube.com/watch?v=${c.videoId}`,
+          externalId: c.videoId, aspectRatio: 0.5625, topicId: c.topicId,
+          summary: { create: summaryData(s) },
+        },
+      });
+      stats.clips++; budget.left--;
+    } catch (e) {
+      if ((e as { code?: string }).code === 'P2002') continue; // already exists
+      throw e;
+    }
   }
 }
 
