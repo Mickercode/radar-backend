@@ -53,64 +53,63 @@ export const NEWS_FEEDS: NewsFeed[] = [
 
 export const PODCAST_FEEDS: NewsFeed[] = [
   // ── Climate ──────────────────────────────────────────────────────────────
-  { url: 'https://feeds.acast.com/public/shows/outrage-optimism', source: 'Outrage + Optimism', topic: 'climate' },
-  { url: 'https://podcasts.files.bbci.co.uk/w13xtvb6.rss', source: 'The Climate Question', topic: 'climate' },
+  { url: 'https://feeds.acast.com/public/shows/outrage-optimism',          source: 'Outrage + Optimism',        topic: 'climate' },
+  { url: 'https://feeds.simplecast.com/4T39_jAj',                           source: 'The Energy Gang',           topic: 'climate' },
+  { url: 'https://podcasts.files.bbci.co.uk/w13xtvb6.rss',                  source: 'The Climate Question',      topic: 'climate' },
 
   // ── Health ───────────────────────────────────────────────────────────────
-  { url: 'https://podcasts.files.bbci.co.uk/p002vsyw.rss', source: 'Health Check', topic: 'health' },
-  { url: 'https://feeds.buzzsprout.com/861868.rss', source: 'The Lancet Voice', topic: 'health' },
-  { url: 'https://johnshopkinssph.libsyn.com/rss', source: 'Public Health On Call', topic: 'health' },
-  { url: 'https://feeds.megaphone.fm/hubermanlab', source: 'Huberman Lab', topic: 'health' },
+  { url: 'https://podcasts.files.bbci.co.uk/p002vsyw.rss',                  source: 'Health Check',              topic: 'health'  },
+  { url: 'https://feeds.buzzsprout.com/861868.rss',                         source: 'The Lancet Voice',          topic: 'health'  },
+  { url: 'https://johnshopkinssph.libsyn.com/rss',                          source: 'Public Health On Call',     topic: 'health'  },
 
   // ── Science ──────────────────────────────────────────────────────────────
-  { url: 'https://feeds.megaphone.fm/sciencevs', source: 'Science Vs', topic: 'science' },
-  { url: 'https://rss.acast.com/nature', source: 'Nature Podcast', topic: 'science' },
-  { url: 'https://feeds.simplecast.com/h18ZIZD_', source: 'Science Friday', topic: 'science' },
+  { url: 'https://feeds.megaphone.fm/sciencevs',                            source: 'Science Vs',                topic: 'science' },
+  { url: 'https://rss.acast.com/nature',                                    source: 'Nature Podcast',            topic: 'science' },
+  { url: 'https://feeds.simplecast.com/h18ZIZD_',                           source: 'Science Friday',            topic: 'science' },
 
   // ── Technology ───────────────────────────────────────────────────────────
-  { url: 'https://feeds.simplecast.com/6HKOhNgS', source: 'Hard Fork', topic: 'tech' },
-  { url: 'https://feeds.megaphone.fm/vergecast', source: 'The Vergecast', topic: 'tech' },
-  { url: 'https://feeds.transistor.fm/acquired', source: 'Acquired', topic: 'tech' },
-  { url: 'https://lexfridman.com/feed/podcast/', source: 'Lex Fridman Podcast', topic: 'ai' },
+  { url: 'https://feeds.simplecast.com/6HKOhNgS',                           source: 'Hard Fork',                 topic: 'tech'    },
+  { url: 'https://feeds.megaphone.fm/vergecast',                            source: 'The Vergecast',             topic: 'tech'    },
+  { url: 'https://feeds.transistor.fm/acquired',                            source: 'Acquired',                  topic: 'tech'    },
 
   // ── Business & Finance ───────────────────────────────────────────────────
+  { url: 'https://feeds.npr.org/510289/podcast.xml',                        source: 'Planet Money',              topic: 'finance' },
   { url: 'https://www.omnycontent.com/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/8a94442e-5a74-4fa2-8b8d-ae27003a8d6b/982f5071-765c-403d-969d-ae27003a8d83/podcast.rss', source: 'Odd Lots', topic: 'finance' },
-  { url: 'https://feeds.npr.org/510289/podcast.xml', source: 'Planet Money', topic: 'finance' },
-  { url: 'https://feeds.npr.org/510313/podcast.xml', source: 'How I Built This', topic: 'business' },
+  { url: 'https://feeds.npr.org/510313/podcast.xml',                        source: 'How I Built This',          topic: 'business'},
 
   // ── Politics ─────────────────────────────────────────────────────────────
-  { url: 'https://rss.acast.com/theintelligencepodcast', source: 'The Intelligence', topic: 'politics' },
-  { url: 'https://podcasts.files.bbci.co.uk/p02nq0gn.rss', source: 'Global News Podcast', topic: 'politics' },
-  { url: 'https://feeds.simplecast.com/54nAGcIl', source: 'The Daily', topic: 'politics' },
+  { url: 'https://feeds.simplecast.com/54nAGcIl',                           source: 'The Daily',                 topic: 'politics'},
+  { url: 'https://podcasts.files.bbci.co.uk/p02nq0gn.rss',                  source: 'Global News Podcast',       topic: 'politics'},
+  { url: 'https://rss.acast.com/theintelligencepodcast',                    source: 'The Intelligence',          topic: 'politics'},
 
   // ── Sports ───────────────────────────────────────────────────────────────
-  { url: 'https://podcasts.files.bbci.co.uk/p02nrsln.rss', source: 'Football Daily', topic: 'sports' },
-  { url: 'https://feeds.acast.com/public/shows/the-athletic-fc-podcast', source: 'The Athletic FC Podcast', topic: 'sports' },
-  { url: 'https://rss.art19.com/men-in-blazers', source: 'Men in Blazers', topic: 'sports' },
+  { url: 'https://podcasts.files.bbci.co.uk/p02nrsln.rss',                  source: 'Football Daily',            topic: 'sports'  },
+  { url: 'https://feeds.acast.com/public/shows/the-athletic-fc-podcast',    source: 'The Athletic FC Podcast',   topic: 'sports'  },
+  { url: 'https://rss.art19.com/men-in-blazers',                            source: 'Men in Blazers',            topic: 'sports'  },
 
   // ── Music ────────────────────────────────────────────────────────────────
-  { url: 'https://afrobeatsintelligence.substack.com/feed', source: 'Afrobeats Intelligence', topic: 'music' },
-  { url: 'https://feeds.simplecast.com/TRYzTEMq', source: 'Song Exploder', topic: 'music' },
-  { url: 'https://feeds.simplecast.com/k48HTXVF', source: 'Popcast', topic: 'music' },
+  { url: 'https://afrobeatsintelligence.substack.com/feed',                 source: 'Afrobeats Intelligence',    topic: 'music'   },
+  { url: 'https://songexploder.net/feed/podcast',                           source: 'Song Exploder',             topic: 'music'   },
+  { url: 'https://feeds.npr.org/510019/podcast.xml',                        source: 'All Songs Considered',      topic: 'music'   },
 
   // ── Film & TV ────────────────────────────────────────────────────────────
-  { url: 'https://feeds.megaphone.fm/thebigpicture', source: 'The Big Picture', topic: 'film' },
-  { url: 'https://feeds.megaphone.fm/PMC7846561481', source: 'IndieWire Screen Talk', topic: 'film' },
-  { url: 'https://scriptnotes.libsyn.com/rss', source: 'Scriptnotes', topic: 'film' },
+  { url: 'https://feeds.megaphone.fm/thebigpicture',                        source: 'The Big Picture',           topic: 'film'    },
+  { url: 'https://feeds.megaphone.fm/PMC7846561481',                        source: 'IndieWire Screen Talk',     topic: 'film'    },
+  { url: 'https://scriptnotes.libsyn.com/rss',                              source: 'Scriptnotes',               topic: 'film'    },
 
   // ── Education ────────────────────────────────────────────────────────────
-  { url: 'https://feeds.soundcloud.com/users/soundcloud:users:144948831/sounds.rss', source: 'The EdSurge Podcast', topic: 'education' },
-  { url: 'https://feeds.transistor.fm/future-u', source: 'Future U', topic: 'education' },
-  { url: 'https://educationnext.org/feed/podcast/', source: 'Education Next', topic: 'education' },
+  { url: 'https://feeds.buzzsprout.com/2265341.rss',                        source: 'The EdSurge Podcast',       topic: 'education'},
+  { url: 'https://feeds.podbean.com/futureu/feed.xml',                      source: 'Future U',                  topic: 'education'},
+  { url: 'https://educationnext.org/feed/',                                  source: 'Education Next',            topic: 'education'},
 
-  // ── Fashion & Travel ─────────────────────────────────────────────────────
-  { url: 'https://feeds.acast.com/public/shows/the-business-of-fashion-podcast', source: 'The Business of Fashion Podcast', topic: 'fashion' },
-  { url: 'https://feeds.acast.com/public/shows/women-who-travel', source: 'Women Who Travel', topic: 'travel' },
-  { url: 'https://feeds.megaphone.fm/ZTTIA6764283121', source: 'Zero To Travel', topic: 'travel' },
+  // ── Fashion, Travel & Lifestyle ───────────────────────────────────────────
+  { url: 'https://podcasts.files.bbci.co.uk/p016tmt2.rss',                  source: 'BBC Travel Show',           topic: 'travel'  },
+  { url: 'https://feeds.acast.com/public/shows/the-business-of-fashion-podcast', source: 'The Business of Fashion Podcast', topic: 'fashion'},
+  { url: 'https://feeds.megaphone.fm/zerototravel',                         source: 'Zero To Travel',            topic: 'travel'  },
 
   // ── Faith & Philosophy ───────────────────────────────────────────────────
-  { url: 'https://feeds.megaphone.fm/QCD6036500916', source: 'Philosophize This!', topic: 'faith' },
-  { url: 'https://feeds.soundcloud.com/users/soundcloud:users:19642636/sounds.rss', source: 'On Being', topic: 'faith' },
+  { url: 'https://philosophizethis.libsyn.com/rss',                         source: 'Philosophize This!',        topic: 'faith'   },
+  { url: 'https://onbeing.org/feed/podcast/',                               source: 'On Being',                  topic: 'faith'   },
   { url: 'https://partiallyexaminedlife.libsyn.com/rss', source: 'The Partially Examined Life', topic: 'faith' },
 ];
 
