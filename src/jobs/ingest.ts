@@ -476,6 +476,12 @@ export async function runIngest() {
   } else {
     console.log('[ingest] ANTHROPIC_API_KEY present ✓');
   }
+  const orKey = process.env.OPENROUTER_API_KEY;
+  if (!orKey) {
+    console.warn('[ingest] OPENROUTER_API_KEY not set — AI will fall back to Claude only');
+  } else {
+    console.log(`[ingest] OPENROUTER_API_KEY present ✓ (${orKey.slice(0, 4)}****)`);
+  }
   const msKey = process.env.MEDIASTACK_API_KEY;
   if (!msKey) {
     console.warn('[ingest] MEDIASTACK_API_KEY not found in process.env — news will fall back to RSS only');

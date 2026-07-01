@@ -1,5 +1,6 @@
 // Editorial Quality Engine (PLAYBOOK §4A / §9) for the ingestion job.
 // Primary: OpenRouter/DeepSeek. Fallback: Claude. Circuit-breaker on billing errors.
+import { jsonrepair } from 'jsonrepair';
 
 const CLAUDE_MODEL    = 'claude-sonnet-4-6';
 const CLAUDE_ENDPOINT = 'https://api.anthropic.com/v1/messages';
@@ -152,6 +153,29 @@ TIER:
 OUTPUT — strict JSON only: { "relevant", "what", "key_takeaways":[], "why", "how_it_matters_to_you", "glossary":[], "forwardable", "advantage", "non_obvious", "learnable", "nigeria_relevance", "tier" }`;
 }
 
+// ── JSON helpers ─────────────────────────────────────────────────────────────
+
+function robustJsonParse(raw: string): Record<string, unknown> | null {
+  // Strip markdown code fences DeepSeek sometimes adds
+  let s = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+
+  // Trim to outermost { ... } in case there's preamble/postamble text
+  const start = s.indexOf('{');
+  const end = s.lastIndexOf('}');
+  if (start !== -1 && end > start) s = s.slice(start, end + 1);
+
+  // Try direct parse
+  try { return JSON.parse(s) as Record<string, unknown>; } catch {}
+
+  // Attempt structural repair (handles missing commas, unescaped quotes, etc.)
+  try {
+    const repaired = jsonrepair(s);
+    return JSON.parse(repaired) as Record<string, unknown>;
+  } catch {}
+
+  return null;
+}
+
 // ── OpenRouter / DeepSeek ─────────────────────────────────────────────────────
 
 async function callOpenRouter(prompt: string, apiKey: string): Promise<SummaryResult | null> {
@@ -189,9 +213,8 @@ async function callOpenRouter(prompt: string, apiKey: string): Promise<SummaryRe
 
     const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
     const raw = data.choices?.[0]?.message?.content ?? '';
-    // DeepSeek sometimes wraps output in ```json ... ``` despite response_format: json_object
-    const jsonStr = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
-    const parsed = JSON.parse(jsonStr) as Record<string, unknown>;
+    const parsed = robustJsonParse(raw);
+    if (!parsed) { console.warn('[editorial] OpenRouter: could not parse response JSON'); return null; }
     return parseSummaryResult(parsed);
   } catch (e) {
     console.warn('[editorial] OpenRouter call threw:', (e as Error).message.slice(0, 120));
