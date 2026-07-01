@@ -3,7 +3,7 @@
 
 const CLAUDE_MODEL    = 'claude-sonnet-4-6';
 const CLAUDE_ENDPOINT = 'https://api.anthropic.com/v1/messages';
-const OR_MODEL        = 'deepseek/deepseek-chat:free';
+const OR_MODEL        = 'deepseek/deepseek-chat';
 const OR_ENDPOINT     = 'https://openrouter.ai/api/v1/chat/completions';
 
 // Claude throttle — ~13 RPM cap. Not applied to OpenRouter.
@@ -275,15 +275,15 @@ export async function generateSummary(
 
   const prompt = buildPrompt(title, body, topic);
 
-  // Primary: Claude (skip if billing already failed this run)
-  if (claudeKey && !claudeBillingFailed) {
-    const result = await callClaude(prompt, claudeKey);
+  // Primary: OpenRouter/DeepSeek
+  if (orKey) {
+    const result = await callOpenRouter(prompt, orKey);
     if (result) return result;
   }
 
-  // Fallback: OpenRouter/DeepSeek
-  if (orKey) {
-    const result = await callOpenRouter(prompt, orKey);
+  // Fallback: Claude (skip if billing already failed this run)
+  if (claudeKey && !claudeBillingFailed) {
+    const result = await callClaude(prompt, claudeKey);
     if (result) return result;
   }
 

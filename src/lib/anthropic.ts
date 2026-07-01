@@ -5,7 +5,7 @@ const CLAUDE_MODEL    = 'claude-sonnet-4-6';
 const CLAUDE_ENDPOINT = 'https://api.anthropic.com/v1/messages';
 
 // OpenRouter fallback — DeepSeek V3 via OpenAI-compatible endpoint.
-const OR_MODEL    = 'deepseek/deepseek-chat:free';
+const OR_MODEL    = 'deepseek/deepseek-chat';
 const OR_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
 
 export interface ToolDefinition {
@@ -125,16 +125,19 @@ export async function generateJson(
   tool: ToolDefinition,
   opts: GenerateOptions = {},
 ): Promise<unknown> {
-  // Try Claude first
+  // Try OpenRouter/DeepSeek first
+  if (env.OPENROUTER_API_KEY) {
+    try {
+      return await generateJsonViaOpenRouter(prompt, tool, opts);
+    } catch (orErr) {
+      console.warn('[ai] OpenRouter unavailable, falling back to Claude:', (orErr as Error).message);
+    }
+  }
+
+  // Fall back to Claude
   try {
     return await generateJsonViaClaude(prompt, tool, opts);
   } catch (claudeErr) {
-    const msg = (claudeErr as Error).message ?? '';
-    const shouldFallback = /claude-40[12]|claude-429|claude-529|claude-503|no-claude-key/.test(msg);
-    if (shouldFallback && env.OPENROUTER_API_KEY) {
-      console.warn('[ai] Claude unavailable, falling back to OpenRouter/DeepSeek:', msg);
-      return generateJsonViaOpenRouter(prompt, tool, opts);
-    }
     if (claudeErr instanceof ApiError) throw claudeErr;
     throw new ApiError(502, 'AI service is temporarily unavailable. Please try again later.');
   }
