@@ -55,6 +55,7 @@ export const PODCAST_FEEDS: NewsFeed[] = [
   // ── Climate ──────────────────────────────────────────────────────────────
   { url: 'https://feeds.acast.com/public/shows/outrage-optimism', source: 'Outrage + Optimism', topic: 'climate' },
   { url: 'https://podcasts.files.bbci.co.uk/w13xtvb6.rss', source: 'The Climate Question', topic: 'climate' },
+  { url: 'https://feeds.simplecast.com/wWLTHNpq', source: 'The Energy Gang', topic: 'climate' },
 
   // ── Health ───────────────────────────────────────────────────────────────
   { url: 'https://podcasts.files.bbci.co.uk/p002vsyw.rss', source: 'Health Check', topic: 'health' },
@@ -90,6 +91,8 @@ export const PODCAST_FEEDS: NewsFeed[] = [
 
   // ── Music ────────────────────────────────────────────────────────────────
   { url: 'https://afrobeatsintelligence.substack.com/feed', source: 'Afrobeats Intelligence', topic: 'music' },
+  { url: 'https://feeds.simplecast.com/TRYzTEMq', source: 'Song Exploder', topic: 'music' },
+  { url: 'https://feeds.simplecast.com/k48HTXVF', source: 'Popcast', topic: 'music' },
 
   // ── Film & TV ────────────────────────────────────────────────────────────
   { url: 'https://feeds.megaphone.fm/thebigpicture', source: 'The Big Picture', topic: 'film' },
@@ -98,9 +101,12 @@ export const PODCAST_FEEDS: NewsFeed[] = [
 
   // ── Education ────────────────────────────────────────────────────────────
   { url: 'https://feeds.soundcloud.com/users/soundcloud:users:144948831/sounds.rss', source: 'The EdSurge Podcast', topic: 'education' },
+  { url: 'https://feeds.transistor.fm/future-u', source: 'Future U', topic: 'education' },
+  { url: 'https://educationnext.org/feed/podcast/', source: 'Education Next', topic: 'education' },
 
   // ── Fashion & Travel ─────────────────────────────────────────────────────
   { url: 'https://feeds.acast.com/public/shows/the-business-of-fashion-podcast', source: 'The Business of Fashion Podcast', topic: 'fashion' },
+  { url: 'https://feeds.acast.com/public/shows/women-who-travel', source: 'Women Who Travel', topic: 'travel' },
   { url: 'https://feeds.megaphone.fm/ZTTIA6764283121', source: 'Zero To Travel', topic: 'travel' },
 
   // ── Faith & Philosophy ───────────────────────────────────────────────────
