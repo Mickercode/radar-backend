@@ -5,7 +5,7 @@ const CLAUDE_MODEL    = 'claude-sonnet-4-6';
 const CLAUDE_ENDPOINT = 'https://api.anthropic.com/v1/messages';
 
 // OpenRouter fallback — DeepSeek V3 via OpenAI-compatible endpoint.
-const OR_MODEL    = 'deepseek/deepseek-chat-v3-5:free';
+const OR_MODEL    = 'deepseek/deepseek-chat:free';
 const OR_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
 
 export interface ToolDefinition {
