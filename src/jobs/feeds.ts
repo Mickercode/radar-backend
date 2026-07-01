@@ -28,15 +28,15 @@ export const NEWS_FEEDS: NewsFeed[] = [
   { url: 'https://www.bellanaija.com/music/feed/',          source: 'BellaNaija Music',       topic: 'music'        },
 
   // ── Nigerian Film / Nollywood ─────────────────────────────────────────────
-  { url: 'https://www.bellanaija.com/entertainment/feed/',  source: 'BellaNaija Entertainment', topic: 'film'       },
-  { url: 'https://nollywoodgists.com/feed/',                source: 'Nollywood Gists',        topic: 'film'         },
+  // bellanaija.com/entertainment/feed returns encoding errors; nollywoodgists.com returns 403
+  { url: 'https://www.bellanaija.com/category/nollywood/feed/', source: 'BellaNaija Nollywood', topic: 'film'     },
 
   // ── Nigerian Fashion / Lifestyle ──────────────────────────────────────────
   { url: 'https://www.bellanaija.com/lifestyle/feed/',      source: 'BellaNaija Lifestyle',   topic: 'fashion'      },
   { url: 'https://www.bellanaija.com/beauty/feed/',         source: 'BellaNaija Beauty',      topic: 'fashion'      },
 
   // ── Travel ────────────────────────────────────────────────────────────────
-  { url: 'https://www.travelnoire.com/feed/',               source: 'Travel Noire',           topic: 'travel'       },
+  // travelnoire.com returns 522 (Cloudflare host error); using NYT only
   { url: 'https://rss.nytimes.com/services/xml/rss/nyt/Travel.xml', source: 'NY Times Travel', topic: 'travel'     },
 
   // ── Education ─────────────────────────────────────────────────────────────

@@ -210,11 +210,9 @@ async function ingestNewsFromMediastack(stats: Stats, budget: { left: number }) 
 
   const categories = Object.keys(MS_CATEGORY_TO_TOPIC).join(',');
 
-  // Two requests: Nigeria-first, then broader Africa for signal.
-  const [ngArticles, africaArticles] = await Promise.all([
-    fetchMediastack({ countries: 'ng', categories }),
-    fetchMediastack({ countries: 'gh,ke,za,eg', categories: 'business,technology,general', limit: '50' }),
-  ]);
+  // Sequential — Mediastack free tier rate-limits parallel requests.
+  const ngArticles = await fetchMediastack({ countries: 'ng', categories });
+  const africaArticles = await fetchMediastack({ countries: 'gh,ke,za,eg', categories: 'business,technology,general', limit: '50' });
 
   const all = [...ngArticles, ...africaArticles];
   console.log(`[ingest] Mediastack: ${ngArticles.length} Nigeria + ${africaArticles.length} Africa articles`);
