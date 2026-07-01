@@ -275,15 +275,15 @@ export async function generateSummary(
 
   const prompt = buildPrompt(title, body, topic);
 
-  // Primary: OpenRouter/DeepSeek
-  if (orKey) {
-    const result = await callOpenRouter(prompt, orKey);
+  // Primary: Claude (skip if billing already failed this run)
+  if (claudeKey && !claudeBillingFailed) {
+    const result = await callClaude(prompt, claudeKey);
     if (result) return result;
   }
 
-  // Fallback: Claude (skip if billing already failed this run)
-  if (claudeKey && !claudeBillingFailed) {
-    const result = await callClaude(prompt, claudeKey);
+  // Fallback: OpenRouter/DeepSeek
+  if (orKey) {
+    const result = await callOpenRouter(prompt, orKey);
     if (result) return result;
   }
 
