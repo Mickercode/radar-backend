@@ -117,25 +117,27 @@ async function generateJsonViaClaude(
 }
 
 /**
- * Generate structured JSON using Claude (primary) with automatic fallback to
- * OpenRouter / DeepSeek when Claude is unavailable or over quota.
+ * Generate structured JSON using OpenRouter/DeepSeek (primary) with automatic
+ * fallback to Claude when OpenRouter is unavailable or the key is missing.
  */
 export async function generateJson(
   prompt: string,
   tool: ToolDefinition,
   opts: GenerateOptions = {},
 ): Promise<unknown> {
+  // Try OpenRouter/DeepSeek first
+  if (env.OPENROUTER_API_KEY) {
+    try {
+      return await generateJsonViaOpenRouter(prompt, tool, opts);
+    } catch (orErr) {
+      console.warn('[ai] OpenRouter unavailable, falling back to Claude:', (orErr as Error).message);
+    }
+  }
+
+  // Fall back to Claude
   try {
     return await generateJsonViaClaude(prompt, tool, opts);
   } catch (claudeErr) {
-    const msg = (claudeErr as Error).message ?? '';
-    // Only fall back for quota/billing/availability errors, not bad prompts.
-    const shouldFallback = /claude-40[12]|claude-429|claude-529|claude-503|no-claude-key/.test(msg);
-    if (shouldFallback && env.OPENROUTER_API_KEY) {
-      console.warn('[ai] Claude unavailable, falling back to OpenRouter/DeepSeek:', msg);
-      return generateJsonViaOpenRouter(prompt, tool, opts);
-    }
-    // For 4xx prompt errors or missing fallback key, surface as 502.
     if (claudeErr instanceof ApiError) throw claudeErr;
     throw new ApiError(502, 'AI service is temporarily unavailable. Please try again later.');
   }
