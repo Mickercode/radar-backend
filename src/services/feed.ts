@@ -40,21 +40,24 @@ const SPARSE_TOPIC_THRESHOLD = 5;
 
 // Maps user interest slugs → topic slugs that exist (or will exist) in the DB.
 // A single interest may span multiple topic slugs.
+// Each interest maps ONLY to its own topic slugs — no cross-interest overlap.
+// Overlap causes politics news to appear in business tabs, etc.
+// The ingest job tags content with exactly one topic slug per source.
 const INTEREST_TO_TOPIC_SLUGS: Record<string, string[]> = {
   politics:   ['politics', 'government', 'policy'],
-  economy:    ['economy', 'finance', 'business', 'markets'],
-  finance:    ['finance', 'money', 'crypto', 'investment', 'economy'],
-  business:   ['business', 'economy', 'markets', 'startups'],
-  tech:       ['tech', 'technology', 'ai', 'startups'],
+  economy:    ['economy', 'markets'],
+  finance:    ['finance', 'money', 'crypto', 'investment'],
+  business:   ['business', 'startups'],
+  tech:       ['tech', 'technology', 'ai'],
   health:     ['health', 'wellness', 'medicine'],
   science:    ['science', 'research', 'space'],
   climate:    ['climate', 'environment', 'energy'],
   sports:     ['sports', 'football', 'athletics'],
-  music:      ['music', 'entertainment', 'culture'],
-  film:       ['film', 'tv', 'entertainment', 'cinema', 'culture'],
+  music:      ['music', 'entertainment'],
+  film:       ['film', 'tv', 'cinema'],
   education:  ['education', 'learning'],
   fashion:    ['fashion', 'lifestyle', 'style'],
-  travel:     ['travel', 'lifestyle'],
+  travel:     ['travel'],
   faith:      ['faith', 'religion', 'philosophy'],
 };
 
@@ -105,13 +108,20 @@ export async function getFeed(topicIds: string[], country?: string, interests: s
     }
   }
 
-  // Enough signal — return as-is.
+  // For a single-interest tab request, NEVER mix in off-topic content.
+  // A user tapping "Economy" must only see economy news — not politics or tech
+  // that happened to be ranked high globally. Return what we have, even if sparse.
+  if (isPerInterestRequest(interests)) {
+    return { items: primary, isFallback: false, matchedTopics: primary.length };
+  }
+
+  // Enough signal on the "For You" feed — return as-is.
   if (primary.length >= SPARSE_TOPIC_THRESHOLD) {
     return { items: primary, isFallback: false, matchedTopics: primary.length };
   }
 
-  // Top up with the unfiltered global feed, keeping the user's matches at the top
-  // (§3 graceful empty state — a sparse-topic user never sees a blank screen).
+  // "For You" is sparse (new user with one narrow topic, or DB just started).
+  // Top up with the global feed so the first screen is never blank.
   const rows = await prisma.content.findMany({
     include: { summary: true },
     orderBy: { createdAt: 'desc' },
