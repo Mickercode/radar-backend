@@ -23,6 +23,12 @@ function requireAdmin(req: Request, _res: Response, next: NextFunction): void {
   next();
 }
 
+// GET /admin/me — debug: returns the email the server sees in the token + whether it's in ADMIN_EMAILS
+adminRouter.get('/admin/me', requireAuth, asyncHandler(async (req, res) => {
+  const email = req.auth?.email ?? '';
+  res.json({ email, isAdmin: ADMIN_SET.has(email.toLowerCase()), adminCount: ADMIN_SET.size });
+}));
+
 // GET /admin/stats → AdminStats
 adminRouter.get(
   '/admin/stats',
