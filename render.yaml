@@ -47,7 +47,7 @@ services:
     plan: starter
     schedule: '0 * * * *'
     buildCommand: npm install --include=dev && npm run build
-    startCommand: node dist/jobs/ingest.js
+    startCommand: node --max-old-space-size=460 dist/jobs/ingest.js
     envVars:
       - key: NODE_ENV
         value: production

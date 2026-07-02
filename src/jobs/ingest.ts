@@ -208,9 +208,10 @@ async function ingestNewsFromMediastack(stats: Stats, budget: { left: number }) 
     return;
   }
 
-  // Free tier limits concurrent and high-param requests — keep Nigeria focused.
-  const ngArticles = await fetchMediastack({ countries: 'ng', categories: 'general,business,technology,sports', limit: '50' });
-  const africaArticles = await fetchMediastack({ countries: 'gh,ke,za,eg', categories: 'business,technology,general', limit: '50' });
+  // Cap at 25 per call — 50 sequential AI calls in one run accumulates heap faster
+  // than V8's GC can collect it on the 512MB Render instance.
+  const ngArticles = await fetchMediastack({ countries: 'ng', categories: 'general,business,technology,sports', limit: '25' });
+  const africaArticles = await fetchMediastack({ countries: 'gh,ke,za,eg', categories: 'business,technology,general', limit: '25' });
 
   const all = [...ngArticles, ...africaArticles];
   console.log(`[ingest] Mediastack: ${ngArticles.length} Nigeria + ${africaArticles.length} Africa articles`);
