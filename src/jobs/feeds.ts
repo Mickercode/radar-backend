@@ -80,13 +80,29 @@ export const NEWS_FEEDS: NewsFeed[] = [
   { url: 'https://www.billboard.com/feed/',                       source: 'Billboard',              topic: 'music'  },
   { url: 'https://www.indiewire.com/feed/',                       source: 'IndieWire',              topic: 'film'   },
 
-  // ── Nigerian Fashion / Lifestyle ──────────────────────────────────────────
-  { url: 'https://www.bellanaija.com/lifestyle/feed/',      source: 'BellaNaija Lifestyle',   topic: 'fashion'      },
-  { url: 'https://www.bellanaija.com/beauty/feed/',         source: 'BellaNaija Beauty',      topic: 'fashion'      },
+  // ── Fashion / Travel & Lifestyle — Nigeria ───────────────────────────────
+  { url: 'https://www.bellanaija.com/lifestyle/feed/',          source: 'BellaNaija Lifestyle',   topic: 'fashion'   },
+  { url: 'https://www.bellanaija.com/beauty/feed/',             source: 'BellaNaija Beauty',      topic: 'fashion'   },
+  { url: 'https://www.bellanaijastyle.com/feed/',               source: 'BellaNaija Style',       topic: 'fashion'   },
+  { url: 'https://genevievemagazine.com/feed/',                 source: 'Genevieve Magazine',     topic: 'fashion'   },
+  { url: 'https://guardian.ng/life/feed/',                      source: 'Guardian Life NG',       topic: 'fashion'   },
+  { url: 'https://www.zikoko.com/feed/',                        source: 'Zikoko',                 topic: 'fashion'   },
+  { url: 'https://itsred.tv/feed/',                             source: 'REDTV',                  topic: 'fashion'   },
 
-  // ── Travel ────────────────────────────────────────────────────────────────
-  // travelnoire.com returns 522 (Cloudflare host error); using NYT only
-  { url: 'https://rss.nytimes.com/services/xml/rss/nyt/Travel.xml', source: 'NY Times Travel', topic: 'travel'     },
+  // ── Fashion / Travel & Lifestyle — Africa ─────────────────────────────────
+  { url: 'https://www.okayafrica.com/style/feed/',              source: 'OkayAfrica Style',       topic: 'fashion'   },
+  { url: 'https://afrobella.com/feed/',                         source: 'Afrobella',              topic: 'fashion'   },
+  { url: 'https://twyg.co.za/feed/',                            source: 'Twyg',                   topic: 'fashion'   },
+  { url: 'https://travelnews.africa/feed/',                     source: 'Travel News Africa',     topic: 'travel'    },
+
+  // ── Fashion / Travel & Lifestyle — International ──────────────────────────
+  // travelnoire.com returns 522 (Cloudflare host error)
+  // CultureTrip has no category-level RSS; GQ + Vogue covered via YouTube clips
+  { url: 'https://rss.nytimes.com/services/xml/rss/nyt/Travel.xml', source: 'NY Times Travel',  topic: 'travel'    },
+  { url: 'https://www.cntraveler.com/feed/rss',                 source: 'Condé Nast Traveler',   topic: 'travel'    },
+  { url: 'https://www.travelandleisure.com/feeds/all',          source: 'Travel + Leisure',       topic: 'travel'    },
+  { url: 'https://www.nationalgeographic.com/travel/feed/',     source: 'National Geographic Travel', topic: 'travel' },
+  { url: 'https://www.vogue.com/feed/rss',                      source: 'Vogue',                  topic: 'fashion'   },
 
   // ── Education — Nigeria ───────────────────────────────────────────────────
   { url: 'https://educeleb.com/feed/',                          source: 'EduCeleb',               topic: 'education'    },
@@ -289,7 +305,7 @@ export const YOUTUBE_CHANNELS: YoutubeChannel[] = [
 // Dedup makes re-runs cheap (only new items hit the AI editorial engine).
 // Kept low to fit within Render free-tier 512 MB — ingest runs every 3h so
 // smaller batches accumulate. Increase once you're on a paid instance.
-export const TARGET_NEWS     = 65;
+export const TARGET_NEWS     = 70;
 export const TARGET_PODCASTS = 8;
 export const TARGET_CLIPS    = 5;
 
