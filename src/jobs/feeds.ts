@@ -15,9 +15,24 @@ export interface NewsFeed {
 // fashion, travel, faith, education, and specialist Nigerian tech/economy voices.
 export const NEWS_FEEDS: NewsFeed[] = [
 
-  // ── Nigerian Tech (specialist voices not always in Mediastack) ───────────
+  // ── Tech — Nigeria ───────────────────────────────────────────────────────
   { url: 'https://techcabal.com/feed/',                     source: 'TechCabal',              topic: 'tech'         },
   { url: 'https://techpoint.africa/feed/',                  source: 'TechPoint Africa',       topic: 'tech'         },
+  { url: 'https://technext24.com/feed/',                    source: 'Technext',               topic: 'tech'         },
+  { url: 'https://www.benjamindada.com/feed/',              source: 'Benjamin Dada',          topic: 'tech'         },
+  { url: 'https://geeky.com.ng/feed/',                      source: 'Geeky Nigeria',          topic: 'tech'         },
+
+  // ── Tech — Africa ─────────────────────────────────────────────────────────
+  { url: 'https://disruptafrica.com/feed/',                 source: 'Disrupt Africa',         topic: 'tech'         },
+  { url: 'https://connectingafrica.com/feed/',              source: 'Connecting Africa',       topic: 'tech'         },
+  { url: 'https://itweb.africa/rss',                        source: 'ITWeb Africa',           topic: 'tech'         },
+  { url: 'https://techcentral.co.za/feed/',                 source: 'TechCentral',            topic: 'tech'         },
+
+  // ── Tech — International ──────────────────────────────────────────────────
+  { url: 'https://www.theverge.com/rss/index.xml',          source: 'The Verge',              topic: 'tech'         },
+  { url: 'https://www.wired.com/feed/rss',                  source: 'WIRED',                  topic: 'tech'         },
+  { url: 'https://feeds.arstechnica.com/arstechnica/index', source: 'Ars Technica',           topic: 'tech'         },
+  { url: 'https://www.technologyreview.com/feed/',          source: 'MIT Technology Review',  topic: 'tech'         },
 
   // ── Nigerian Economy (specialist financial voices) ───────────────────────
   { url: 'https://nairametrics.com/feed/',                  source: 'Nairametrics',           topic: 'economy'      },
@@ -193,7 +208,7 @@ export const YOUTUBE_CHANNELS: YoutubeChannel[] = [
 // Dedup makes re-runs cheap (only new items hit the AI editorial engine).
 // Kept low to fit within Render free-tier 512 MB — ingest runs every 3h so
 // smaller batches accumulate. Increase once you're on a paid instance.
-export const TARGET_NEWS     = 35;
+export const TARGET_NEWS     = 40;
 export const TARGET_PODCASTS = 8;
 export const TARGET_CLIPS    = 5;
 
