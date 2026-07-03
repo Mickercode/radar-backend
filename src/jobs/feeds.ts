@@ -53,13 +53,32 @@ export const NEWS_FEEDS: NewsFeed[] = [
   { url: 'https://feeds.reuters.com/reuters/businessNews',  source: 'Reuters Business',       topic: 'finance'      },
   { url: 'https://www.economist.com/finance-and-economics/rss.xml', source: 'The Economist', topic: 'finance'      },
 
-  // ── Nigerian Music (Afrobeats-specific) ──────────────────────────────────
-  { url: 'https://www.notjustok.com/feed/',                 source: 'NotJustOk',              topic: 'music'        },
-  { url: 'https://www.bellanaija.com/music/feed/',          source: 'BellaNaija Music',       topic: 'music'        },
+  // ── Music / Film & TV — Nigeria ──────────────────────────────────────────
+  { url: 'https://www.notjustok.com/feed/',                       source: 'NotJustOk',              topic: 'music'  },
+  { url: 'https://www.bellanaija.com/music/feed/',                source: 'BellaNaija Music',       topic: 'music'  },
+  { url: 'https://www.bellanaija.com/category/nollywood/feed/',   source: 'BellaNaija Nollywood',   topic: 'film'   },
+  { url: 'https://www.pulse.ng/entertainment/feed/',              source: 'Pulse Entertainment',    topic: 'music'  },
+  { url: 'https://kemifilani.ng/feed/',                           source: 'Kemi Filani',            topic: 'film'   },
+  { url: 'https://www.naijavibe.net/feed/',                       source: 'NaijaVibe',              topic: 'music'  },
+  { url: 'https://whatkeptmeup.com/feed/',                        source: 'What Kept Me Up',        topic: 'music'  },
 
-  // ── Nigerian Film / Nollywood ─────────────────────────────────────────────
-  // bellanaija.com/entertainment/feed returns encoding errors; nollywoodgists.com returns 403
-  { url: 'https://www.bellanaija.com/category/nollywood/feed/', source: 'BellaNaija Nollywood', topic: 'film'     },
+  // ── Music / Film & TV — Africa ────────────────────────────────────────────
+  { url: 'https://www.musicinafrica.net/feed/',                   source: 'Music In Africa',        topic: 'music'  },
+  { url: 'https://www.okayafrica.com/feed/',                      source: 'OkayAfrica',             topic: 'music'  },
+  { url: 'https://africasacountry.com/feed/',                     source: 'Africa Is A Country',    topic: 'film'   },
+  { url: 'https://thecontinent.org/feed/',                        source: 'The Continent',          topic: 'film'   },
+  { url: 'https://afrocritik.com/feed/',                          source: 'Afrocritik',             topic: 'film'   },
+  { url: 'https://culturecustodian.com/feed/',                    source: 'The Culture Custodian',  topic: 'music'  },
+  { url: 'https://africanfilmpress.com/feed/',                    source: 'Africa Film Press',      topic: 'film'   },
+  { url: 'https://www.sinemafocus.com/feed/',                     source: 'Sinema Focus',           topic: 'film'   },
+  { url: 'https://akoroko.com/feed/',                             source: 'Akoroko',                topic: 'music'  },
+
+  // ── Music / Film & TV — International ────────────────────────────────────
+  { url: 'https://variety.com/feed/',                             source: 'Variety',                topic: 'film'   },
+  { url: 'https://www.hollywoodreporter.com/feed/',               source: 'Hollywood Reporter',     topic: 'film'   },
+  { url: 'https://deadline.com/feed/',                            source: 'Deadline',               topic: 'film'   },
+  { url: 'https://www.billboard.com/feed/',                       source: 'Billboard',              topic: 'music'  },
+  { url: 'https://www.indiewire.com/feed/',                       source: 'IndieWire',              topic: 'film'   },
 
   // ── Nigerian Fashion / Lifestyle ──────────────────────────────────────────
   { url: 'https://www.bellanaija.com/lifestyle/feed/',      source: 'BellaNaija Lifestyle',   topic: 'fashion'      },
@@ -260,7 +279,7 @@ export const YOUTUBE_CHANNELS: YoutubeChannel[] = [
 // Dedup makes re-runs cheap (only new items hit the AI editorial engine).
 // Kept low to fit within Render free-tier 512 MB — ingest runs every 3h so
 // smaller batches accumulate. Increase once you're on a paid instance.
-export const TARGET_NEWS     = 55;
+export const TARGET_NEWS     = 60;
 export const TARGET_PODCASTS = 8;
 export const TARGET_CLIPS    = 5;
 
