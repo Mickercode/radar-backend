@@ -129,6 +129,28 @@ export const NEWS_FEEDS: NewsFeed[] = [
   { url: 'https://www.livescience.com/feeds/all',              source: 'Live Science',             topic: 'science'      },
   { url: 'https://theconversation.com/global/articles.atom',   source: 'The Conversation',        topic: 'science'      },
 
+  // ── Politics — Nigeria ────────────────────────────────────────────────────
+  { url: 'https://www.premiumtimesng.com/politics/feed/',      source: 'Premium Times Politics',  topic: 'politics'     },
+  { url: 'https://www.thecable.ng/politics/feed/',             source: 'TheCable Politics',        topic: 'politics'     },
+  { url: 'https://punchng.com/category/politics/feed/',        source: 'Punch Politics',           topic: 'politics'     },
+  { url: 'https://www.thisdaylive.com/index.php/politics/feed/', source: 'ThisDay Politics',       topic: 'politics'     },
+  { url: 'https://dailytrust.com/category/politics/feed/',     source: 'Daily Trust Politics',     topic: 'politics'     },
+
+  // ── Politics — Africa ─────────────────────────────────────────────────────
+  { url: 'https://www.theafricareport.com/politics/feed/',     source: 'The Africa Report Politics', topic: 'politics'  },
+  { url: 'https://africanarguments.org/feed/',                 source: 'African Arguments',        topic: 'politics'     },
+  { url: 'https://issafrica.org/iss-today/feed/',              source: 'ISS Africa',               topic: 'politics'     },
+  { url: 'https://allafrica.com/stories/rss2.0.xml?category=politics', source: 'AllAfrica Politics', topic: 'politics'  },
+  { url: 'https://mg.co.za/politics/feed/',                    source: 'Mail & Guardian Politics', topic: 'politics'     },
+
+  // ── Politics — International ──────────────────────────────────────────────
+  { url: 'https://rss.politico.com/politics-news.xml',         source: 'Politico',                topic: 'politics'     },
+  { url: 'https://www.foreignaffairs.com/rss.xml',             source: 'Foreign Affairs',          topic: 'politics'     },
+  { url: 'https://feeds.bbci.co.uk/news/politics/rss.xml',     source: 'BBC Politics',            topic: 'politics'     },
+  { url: 'https://feeds.reuters.com/reuters/worldnews',         source: 'Reuters World',           topic: 'politics'     },
+  { url: 'https://www.theguardian.com/world/rss',              source: 'The Guardian World',       topic: 'politics'     },
+  { url: 'https://www.chathamhouse.org/rss.xml',               source: 'Chatham House',            topic: 'politics'     },
+
   // ── Sports supplement (Nigerian football-specific) ────────────────────────
   { url: 'https://www.completesports.com/feed/',            source: 'Complete Sports NG',     topic: 'sports'       },
   { url: 'https://soccernet.ng/feed/',                      source: 'Soccernet NG',           topic: 'sports'       },
@@ -223,7 +245,7 @@ export const YOUTUBE_CHANNELS: YoutubeChannel[] = [
 // Dedup makes re-runs cheap (only new items hit the AI editorial engine).
 // Kept low to fit within Render free-tier 512 MB — ingest runs every 3h so
 // smaller batches accumulate. Increase once you're on a paid instance.
-export const TARGET_NEWS     = 45;
+export const TARGET_NEWS     = 50;
 export const TARGET_PODCASTS = 8;
 export const TARGET_CLIPS    = 5;
 
