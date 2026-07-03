@@ -196,6 +196,24 @@ export const NEWS_FEEDS: NewsFeed[] = [
   { url: 'https://www.theguardian.com/world/rss',              source: 'The Guardian World',       topic: 'politics'     },
   { url: 'https://www.chathamhouse.org/rss.xml',               source: 'Chatham House',            topic: 'politics'     },
 
+  // ── Faith & Philosophy — Nigeria ─────────────────────────────────────────
+  { url: 'https://churchtimesnigeria.net/feed/',                   source: 'Church Times Nigeria',    topic: 'faith'        },
+  { url: 'https://guardian.ng/category/sunday-magazine/ibru-ecumenical-centre/feed/', source: 'Guardian Ibru Centre', topic: 'faith' },
+  { url: 'https://christianitynigeria.com/feed/',                  source: 'Christianity Nigeria',    topic: 'faith'        },
+  { url: 'https://muslimnews.com.ng/feed/',                        source: 'Muslim News Nigeria',     topic: 'faith'        },
+
+  // ── Faith & Philosophy — Africa ───────────────────────────────────────────
+  { url: 'https://www.theelephant.info/feed/',                     source: 'The Elephant',            topic: 'faith'        },
+  { url: 'https://africasacountry.com/religion/feed/',             source: 'Africa Is A Country Religion', topic: 'faith'  },
+  { url: 'https://www.fides.org/en/rss',                           source: 'Agenzia Fides',           topic: 'faith'        },
+  { url: 'https://allafrica.com/stories/rss2.0.xml?category=religion', source: 'AllAfrica Religion', topic: 'faith'        },
+
+  // ── Faith & Philosophy — International ────────────────────────────────────
+  { url: 'https://aeon.co/feed.rss',                               source: 'Aeon',                    topic: 'faith'        },
+  { url: 'https://philosophynow.org/rss',                          source: 'Philosophy Now',           topic: 'faith'        },
+  { url: 'https://religionnews.com/feed/',                         source: 'Religion News Service',   topic: 'faith'        },
+  { url: 'https://newhumanist.org.uk/feed/',                       source: 'New Humanist',            topic: 'faith'        },
+
   // ── Sports — Nigeria ──────────────────────────────────────────────────────
   { url: 'https://www.completesports.com/feed/',            source: 'Complete Sports NG',     topic: 'sports'       },
   { url: 'https://soccernet.ng/feed/',                      source: 'Soccernet NG',           topic: 'sports'       },
@@ -305,7 +323,7 @@ export const YOUTUBE_CHANNELS: YoutubeChannel[] = [
 // Dedup makes re-runs cheap (only new items hit the AI editorial engine).
 // Kept low to fit within Render free-tier 512 MB — ingest runs every 3h so
 // smaller batches accumulate. Increase once you're on a paid instance.
-export const TARGET_NEWS     = 70;
+export const TARGET_NEWS     = 75;
 export const TARGET_PODCASTS = 8;
 export const TARGET_CLIPS    = 5;
 
