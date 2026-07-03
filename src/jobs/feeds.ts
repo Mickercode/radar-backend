@@ -151,9 +151,24 @@ export const NEWS_FEEDS: NewsFeed[] = [
   { url: 'https://www.theguardian.com/world/rss',              source: 'The Guardian World',       topic: 'politics'     },
   { url: 'https://www.chathamhouse.org/rss.xml',               source: 'Chatham House',            topic: 'politics'     },
 
-  // ── Sports supplement (Nigerian football-specific) ────────────────────────
+  // ── Sports — Nigeria ──────────────────────────────────────────────────────
   { url: 'https://www.completesports.com/feed/',            source: 'Complete Sports NG',     topic: 'sports'       },
   { url: 'https://soccernet.ng/feed/',                      source: 'Soccernet NG',           topic: 'sports'       },
+  { url: 'https://brila.net/feed/',                         source: 'Brila',                  topic: 'sports'       },
+  { url: 'https://punchng.com/category/sports/feed/',       source: 'Punch Sports',           topic: 'sports'       },
+  { url: 'https://www.premiumtimesng.com/sports-news/feed/', source: 'Premium Times Sports',  topic: 'sports'       },
+  { url: 'https://guardian.ng/sport/feed/',                 source: 'Guardian Sport NG',      topic: 'sports'       },
+
+  // ── Sports — Africa ───────────────────────────────────────────────────────
+  { url: 'https://www.kickoff.com/feed/',                   source: 'KickOff',                topic: 'sports'       },
+  { url: 'https://sportnewsafrica.com/feed/',               source: 'Sport News Africa',      topic: 'sports'       },
+  { url: 'https://feeds.bbci.co.uk/sport/africa/rss.xml',  source: 'BBC Sport Africa',       topic: 'sports'       },
+
+  // ── Sports — International ────────────────────────────────────────────────
+  // SuperSport + CAF Online have no public RSS; Goal.com discontinued RSS
+  { url: 'https://www.skysports.com/rss/12040',             source: 'Sky Sports',             topic: 'sports'       },
+  { url: 'https://www.espn.com/espn/rss/news',              source: 'ESPN',                   topic: 'sports'       },
+  { url: 'https://feeds.bbci.co.uk/sport/rss.xml',          source: 'BBC Sport',              topic: 'sports'       },
 ];
 
 export const PODCAST_FEEDS: NewsFeed[] = [
@@ -245,7 +260,7 @@ export const YOUTUBE_CHANNELS: YoutubeChannel[] = [
 // Dedup makes re-runs cheap (only new items hit the AI editorial engine).
 // Kept low to fit within Render free-tier 512 MB — ingest runs every 3h so
 // smaller batches accumulate. Increase once you're on a paid instance.
-export const TARGET_NEWS     = 50;
+export const TARGET_NEWS     = 55;
 export const TARGET_PODCASTS = 8;
 export const TARGET_CLIPS    = 5;
 
