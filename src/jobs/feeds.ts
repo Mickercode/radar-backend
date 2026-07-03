@@ -43,8 +43,23 @@ export const NEWS_FEEDS: NewsFeed[] = [
   { url: 'https://feeds.bbci.co.uk/news/education/rss.xml', source: 'BBC Education',         topic: 'education'    },
   { url: 'https://rss.nytimes.com/services/xml/rss/nyt/Education.xml', source: 'NY Times Education', topic: 'education' },
 
-  // ── Climate ───────────────────────────────────────────────────────────────
-  { url: 'https://rss.nytimes.com/services/xml/rss/nyt/Climate.xml', source: 'NY Times Climate', topic: 'climate'  },
+  // ── Climate — Nigeria ─────────────────────────────────────────────────────
+  { url: 'https://climatereporters.com/feed/',                source: 'Climate Reporters NG',   topic: 'climate'      },
+  { url: 'https://www.environewsnigeria.com/feed/',           source: 'EnviroNews Nigeria',      topic: 'climate'      },
+  { url: 'https://ncfnigeria.org/blog/feed/',                 source: 'NCF Nigeria',             topic: 'climate'      },
+
+  // ── Climate — Africa ──────────────────────────────────────────────────────
+  { url: 'https://africaclimatewire.org/feed/',               source: 'Africa Climate Wire',     topic: 'climate'      },
+  { url: 'https://allafrica.com/stories/rss2.0.xml?category=environment', source: 'AllAfrica Environment', topic: 'climate' },
+  { url: 'https://news.mongabay.com/feed/?category=africa',  source: 'Mongabay Africa',         topic: 'climate'      },
+  { url: 'https://africanarguments.org/feed/',                source: 'African Arguments',       topic: 'climate'      },
+
+  // ── Climate — International ───────────────────────────────────────────────
+  { url: 'https://www.carbonbrief.org/feed/',                 source: 'Carbon Brief',            topic: 'climate'      },
+  { url: 'https://www.climatechangenews.com/feed/',           source: 'Climate Change News',     topic: 'climate'      },
+  { url: 'https://yaleclimateconnections.org/feed/',          source: 'Yale Climate Connections',topic: 'climate'      },
+  { url: 'https://insideclimatenews.org/feed/',               source: 'Inside Climate News',     topic: 'climate'      },
+  { url: 'https://rss.nytimes.com/services/xml/rss/nyt/Climate.xml', source: 'NY Times Climate', topic: 'climate'   },
 
   // ── Sports supplement (Nigerian football-specific) ────────────────────────
   { url: 'https://www.completesports.com/feed/',            source: 'Complete Sports NG',     topic: 'sports'       },
@@ -140,7 +155,7 @@ export const YOUTUBE_CHANNELS: YoutubeChannel[] = [
 // Dedup makes re-runs cheap (only new items hit the AI editorial engine).
 // Kept low to fit within Render free-tier 512 MB — ingest runs every 3h so
 // smaller batches accumulate. Increase once you're on a paid instance.
-export const TARGET_NEWS     = 20;
+export const TARGET_NEWS     = 25;
 export const TARGET_PODCASTS = 8;
 export const TARGET_CLIPS    = 5;
 
