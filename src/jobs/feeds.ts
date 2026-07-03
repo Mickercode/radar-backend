@@ -88,9 +88,19 @@ export const NEWS_FEEDS: NewsFeed[] = [
   // travelnoire.com returns 522 (Cloudflare host error); using NYT only
   { url: 'https://rss.nytimes.com/services/xml/rss/nyt/Travel.xml', source: 'NY Times Travel', topic: 'travel'     },
 
-  // ── Education ─────────────────────────────────────────────────────────────
-  { url: 'https://feeds.bbci.co.uk/news/education/rss.xml', source: 'BBC Education',         topic: 'education'    },
+  // ── Education — Nigeria ───────────────────────────────────────────────────
+  { url: 'https://educeleb.com/feed/',                          source: 'EduCeleb',               topic: 'education'    },
+  { url: 'https://www.myschoolgist.com/feed/',                  source: 'MySchoolGist',           topic: 'education'    },
+  { url: 'https://scholarshipscafe.com/feed/',                  source: 'Scholarships Café',      topic: 'education'    },
+
+  // ── Education — International ─────────────────────────────────────────────
+  { url: 'https://feeds.bbci.co.uk/news/education/rss.xml',    source: 'BBC Education',          topic: 'education'    },
   { url: 'https://rss.nytimes.com/services/xml/rss/nyt/Education.xml', source: 'NY Times Education', topic: 'education' },
+  { url: 'https://www.timeshighereducation.com/feed',           source: 'Times Higher Education', topic: 'education'    },
+  { url: 'https://www.insidehighered.com/rss/articles',         source: 'Inside Higher Ed',       topic: 'education'    },
+  { url: 'https://www.universityworldnews.com/feed/',           source: 'University World News',  topic: 'education'    },
+  { url: 'https://hechingerreport.org/feed/',                   source: 'The Hechinger Report',   topic: 'education'    },
+  { url: 'https://feeds.edweek.org/edweek/TopSchoolIssues',    source: 'Education Week',         topic: 'education'    },
 
   // ── Climate — Nigeria ─────────────────────────────────────────────────────
   { url: 'https://climatereporters.com/feed/',                source: 'Climate Reporters NG',   topic: 'climate'      },
@@ -279,7 +289,7 @@ export const YOUTUBE_CHANNELS: YoutubeChannel[] = [
 // Dedup makes re-runs cheap (only new items hit the AI editorial engine).
 // Kept low to fit within Render free-tier 512 MB — ingest runs every 3h so
 // smaller batches accumulate. Increase once you're on a paid instance.
-export const TARGET_NEWS     = 60;
+export const TARGET_NEWS     = 65;
 export const TARGET_PODCASTS = 8;
 export const TARGET_CLIPS    = 5;
 
