@@ -274,6 +274,7 @@ export const PODCAST_FEEDS: NewsFeed[] = [
   { url: 'https://afrobeatsintelligence.substack.com/feed',                 source: 'Afrobeats Intelligence',    topic: 'music'   },
   { url: 'https://songexploder.net/feed/podcast',                           source: 'Song Exploder',             topic: 'music'   },
   { url: 'https://feeds.npr.org/510019/podcast.xml',                        source: 'All Songs Considered',      topic: 'music'   },
+  { url: 'https://feeds.simplecast.com/98TM_3N_',                           source: 'Popcast',                   topic: 'music'   },
 
   // ── Film & TV ────────────────────────────────────────────────────────────
   { url: 'https://feeds.megaphone.fm/thebigpicture',                        source: 'The Big Picture',           topic: 'film'    },
@@ -289,6 +290,7 @@ export const PODCAST_FEEDS: NewsFeed[] = [
   { url: 'https://podcasts.files.bbci.co.uk/p016tmt2.rss',                  source: 'BBC Travel Show',           topic: 'travel'  },
   { url: 'https://feeds.acast.com/public/shows/the-business-of-fashion-podcast', source: 'The Business of Fashion Podcast', topic: 'fashion'},
   { url: 'https://feeds.megaphone.fm/zerototravel',                         source: 'Zero To Travel',            topic: 'travel'  },
+  { url: 'https://feeds.megaphone.fm/womenwhotravel',                        source: 'Women Who Travel',          topic: 'travel'  },
 
   // ── Faith & Philosophy ───────────────────────────────────────────────────
   { url: 'https://philosophizethis.libsyn.com/rss',                         source: 'Philosophize This!',        topic: 'faith'   },
