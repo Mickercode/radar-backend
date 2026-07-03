@@ -61,6 +61,26 @@ export const NEWS_FEEDS: NewsFeed[] = [
   { url: 'https://insideclimatenews.org/feed/',               source: 'Inside Climate News',     topic: 'climate'      },
   { url: 'https://rss.nytimes.com/services/xml/rss/nyt/Climate.xml', source: 'NY Times Climate', topic: 'climate'   },
 
+  // ── Health — Nigeria ──────────────────────────────────────────────────────
+  { url: 'https://nigeriahealthwatch.com/feed/',               source: 'Nigeria Health Watch',    topic: 'health'       },
+  { url: 'https://www.premiumtimesng.com/health/feed/',        source: 'Premium Times Health',    topic: 'health'       },
+  { url: 'https://healthwise.punchng.com/feed/',               source: 'Healthwise Punch',        topic: 'health'       },
+  { url: 'https://dailytrust.com/category/health/feed/',       source: 'Daily Trust Health',      topic: 'health'       },
+  { url: 'https://guardian.ng/category/features/health/feed/', source: 'Guardian Health NG',     topic: 'health'       },
+
+  // ── Health — Africa ───────────────────────────────────────────────────────
+  { url: 'https://health-e.org.za/feed/',                      source: 'Health-e News',           topic: 'health'       },
+  { url: 'https://allafrica.com/stories/rss2.0.xml?category=health', source: 'AllAfrica Health', topic: 'health'       },
+  { url: 'https://bhekisisa.org/feed/',                        source: 'Bhekisisa',               topic: 'health'       },
+  { url: 'https://www.afro.who.int/feeds/news',                source: 'WHO Africa',              topic: 'health'       },
+
+  // ── Health — International ────────────────────────────────────────────────
+  { url: 'https://www.thelancet.com/rssfeed/lancet_current.xml', source: 'The Lancet',           topic: 'health'       },
+  { url: 'https://www.bmj.com/rss/current.xml',                source: 'BMJ',                     topic: 'health'       },
+  { url: 'https://www.statnews.com/feed/',                     source: 'STAT News',               topic: 'health'       },
+  { url: 'https://www.who.int/feeds/entity/news/en/rss.xml',   source: 'WHO',                    topic: 'health'       },
+  { url: 'https://healthpolicy-watch.news/feed/',              source: 'Health Policy Watch',     topic: 'health'       },
+
   // ── Sports supplement (Nigerian football-specific) ────────────────────────
   { url: 'https://www.completesports.com/feed/',            source: 'Complete Sports NG',     topic: 'sports'       },
   { url: 'https://soccernet.ng/feed/',                      source: 'Soccernet NG',           topic: 'sports'       },
@@ -155,7 +175,7 @@ export const YOUTUBE_CHANNELS: YoutubeChannel[] = [
 // Dedup makes re-runs cheap (only new items hit the AI editorial engine).
 // Kept low to fit within Render free-tier 512 MB — ingest runs every 3h so
 // smaller batches accumulate. Increase once you're on a paid instance.
-export const TARGET_NEWS     = 25;
+export const TARGET_NEWS     = 30;
 export const TARGET_PODCASTS = 8;
 export const TARGET_CLIPS    = 5;
 
