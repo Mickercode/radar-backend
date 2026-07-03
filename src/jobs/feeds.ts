@@ -34,9 +34,24 @@ export const NEWS_FEEDS: NewsFeed[] = [
   { url: 'https://feeds.arstechnica.com/arstechnica/index', source: 'Ars Technica',           topic: 'tech'         },
   { url: 'https://www.technologyreview.com/feed/',          source: 'MIT Technology Review',  topic: 'tech'         },
 
-  // ── Nigerian Economy (specialist financial voices) ───────────────────────
+  // ── Business & Finance — Nigeria ─────────────────────────────────────────
   { url: 'https://nairametrics.com/feed/',                  source: 'Nairametrics',           topic: 'economy'      },
   { url: 'https://businessday.ng/feed/',                    source: 'BusinessDay NG',         topic: 'finance'      },
+  { url: 'https://www.thisdaylive.com/index.php/business/feed/', source: 'ThisDay Business', topic: 'finance'      },
+  { url: 'https://www.thecable.ng/business-economy/feed/', source: 'TheCable Business',      topic: 'finance'      },
+  { url: 'https://leadership.ng/business/feed/',            source: 'Leadership Business',    topic: 'finance'      },
+
+  // ── Business & Finance — Africa ───────────────────────────────────────────
+  { url: 'https://african.business/feed/',                  source: 'African Business',       topic: 'finance'      },
+  { url: 'https://www.theafricareport.com/business/feed/',  source: 'The Africa Report',      topic: 'finance'      },
+  { url: 'https://www.howwemadeitinafrica.com/feed/',        source: 'How We Made It In Africa', topic: 'finance'   },
+  { url: 'https://www.cnbcafrica.com/feed/',                source: 'CNBC Africa',            topic: 'finance'      },
+  { url: 'https://africabusinessplus.com/feed/',            source: 'Africa Business+',       topic: 'finance'      },
+
+  // ── Business & Finance — International ───────────────────────────────────
+  // FT, Bloomberg (news), WSJ have no reliable public RSS — Bloomberg covered via YouTube clips
+  { url: 'https://feeds.reuters.com/reuters/businessNews',  source: 'Reuters Business',       topic: 'finance'      },
+  { url: 'https://www.economist.com/finance-and-economics/rss.xml', source: 'The Economist', topic: 'finance'      },
 
   // ── Nigerian Music (Afrobeats-specific) ──────────────────────────────────
   { url: 'https://www.notjustok.com/feed/',                 source: 'NotJustOk',              topic: 'music'        },
@@ -208,7 +223,7 @@ export const YOUTUBE_CHANNELS: YoutubeChannel[] = [
 // Dedup makes re-runs cheap (only new items hit the AI editorial engine).
 // Kept low to fit within Render free-tier 512 MB — ingest runs every 3h so
 // smaller batches accumulate. Increase once you're on a paid instance.
-export const TARGET_NEWS     = 40;
+export const TARGET_NEWS     = 45;
 export const TARGET_PODCASTS = 8;
 export const TARGET_CLIPS    = 5;
 
