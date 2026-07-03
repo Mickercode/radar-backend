@@ -81,6 +81,24 @@ export const NEWS_FEEDS: NewsFeed[] = [
   { url: 'https://www.who.int/feeds/entity/news/en/rss.xml',   source: 'WHO',                    topic: 'health'       },
   { url: 'https://healthpolicy-watch.news/feed/',              source: 'Health Policy Watch',     topic: 'health'       },
 
+  // ── Science — Nigeria ─────────────────────────────────────────────────────
+  { url: 'https://sciencenigeria.com/feed/',                   source: 'Science Nigeria',         topic: 'science'      },
+  { url: 'https://nas.org.ng/feed/',                           source: 'Nigerian Academy of Science', topic: 'science'  },
+
+  // ── Science — Africa ──────────────────────────────────────────────────────
+  { url: 'https://www.scidev.net/sub-saharan-africa/feed/',    source: 'SciDev.Net Africa',       topic: 'science'      },
+  { url: 'https://www.aasciences.africa/feed/',                source: 'African Academy of Sciences', topic: 'science'  },
+  { url: 'https://theconversation.com/africa/articles.atom',   source: 'The Conversation Africa', topic: 'science'      },
+  { url: 'https://www.nature.com/subjects/africa.rss',         source: 'Nature Africa',           topic: 'science'      },
+
+  // ── Science — International ───────────────────────────────────────────────
+  { url: 'https://feeds.nature.com/nature/rss/current',        source: 'Nature',                  topic: 'science'      },
+  { url: 'https://www.science.org/rss/news_current.xml',       source: 'Science',                 topic: 'science'      },
+  { url: 'https://www.newscientist.com/feed/home/',            source: 'New Scientist',            topic: 'science'      },
+  { url: 'https://www.scientificamerican.com/feed/',           source: 'Scientific American',      topic: 'science'      },
+  { url: 'https://www.livescience.com/feeds/all',              source: 'Live Science',             topic: 'science'      },
+  { url: 'https://theconversation.com/global/articles.atom',   source: 'The Conversation',        topic: 'science'      },
+
   // ── Sports supplement (Nigerian football-specific) ────────────────────────
   { url: 'https://www.completesports.com/feed/',            source: 'Complete Sports NG',     topic: 'sports'       },
   { url: 'https://soccernet.ng/feed/',                      source: 'Soccernet NG',           topic: 'sports'       },
@@ -175,7 +193,7 @@ export const YOUTUBE_CHANNELS: YoutubeChannel[] = [
 // Dedup makes re-runs cheap (only new items hit the AI editorial engine).
 // Kept low to fit within Render free-tier 512 MB — ingest runs every 3h so
 // smaller batches accumulate. Increase once you're on a paid instance.
-export const TARGET_NEWS     = 30;
+export const TARGET_NEWS     = 35;
 export const TARGET_PODCASTS = 8;
 export const TARGET_CLIPS    = 5;
 
