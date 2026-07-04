@@ -178,6 +178,8 @@ export const NEWS_FEEDS: NewsFeed[] = [
   { url: 'https://yaleclimateconnections.org/feed/',          source: 'Yale Climate Connections',topic: 'climate'      },
   { url: 'https://insideclimatenews.org/feed/',               source: 'Inside Climate News',     topic: 'climate'      },
   { url: 'https://rss.nytimes.com/services/xml/rss/nyt/Climate.xml', source: 'NY Times Climate', topic: 'climate'   },
+  { url: 'https://feeds.nature.com/nclimate/rss/current',            source: 'Nature Climate Change', topic: 'climate' },
+  { url: 'https://feeds.reuters.com/reuters/environment',             source: 'Reuters Environment', topic: 'climate'  },
 
   // ── Health — Nigeria ──────────────────────────────────────────────────────
   { url: 'https://nigeriahealthwatch.com/feed/',               source: 'Nigeria Health Watch',    topic: 'health'       },
@@ -303,6 +305,7 @@ export const PODCAST_FEEDS: NewsFeed[] = [
   { url: 'https://feeds.acast.com/public/shows/outrage-optimism',          source: 'Outrage + Optimism',        topic: 'climate' },
   { url: 'https://feeds.simplecast.com/4T39_jAj',                           source: 'The Energy Gang',           topic: 'climate' },
   { url: 'https://podcasts.files.bbci.co.uk/w13xtvb6.rss',                  source: 'The Climate Question',      topic: 'climate' },
+  { url: 'https://feeds.megaphone.fm/nextafrica',                            source: 'Next Africa (Bloomberg)',    topic: 'climate' },
 
   // ── Health ───────────────────────────────────────────────────────────────
   { url: 'https://podcasts.files.bbci.co.uk/p002vsyw.rss',                  source: 'Health Check',              topic: 'health'  },
