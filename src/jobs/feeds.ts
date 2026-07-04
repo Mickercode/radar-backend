@@ -405,6 +405,7 @@ export const YOUTUBE_CHANNELS: YoutubeChannel[] = [
   { channelId: 'UCIALMKvObZNtJ6AmdCLP7Lg', source: 'Bloomberg',      topic: 'economy'   },
   { channelId: 'UCCjyq_K1Xwfg8Lndy7lKMpA', source: 'TechCrunch',    topic: 'tech'      },
   { channelId: 'UCJIfeSCssxSC_Dhc5s7woww', source: 'Lex Clips',      topic: 'tech'      },
+  { channelId: 'UCSHZKyawb77ixDdsGog4iWA', source: 'Lex Fridman',    topic: 'science'   },
   { channelId: 'UCnUYZLuoy1rq1aVMwx4aTzw', source: 'GQ',             topic: 'fashion'   },
   { channelId: 'UCqZQlzSHbVJrwrn5XvzrzcA', source: 'ESPN FC',        topic: 'sports'    },
   { channelId: 'UCB_qr75-ydFVKSF9Dmo6izg', source: 'Al Jazeera Eng', topic: 'politics'  },
@@ -412,6 +413,10 @@ export const YOUTUBE_CHANNELS: YoutubeChannel[] = [
   // { channelId: 'PASTE_CHANNELS_TV_ID',   source: 'Channels TV',    topic: 'politics'  },
   // { channelId: 'PASTE_TVC_NEWS_ID',      source: 'TVC News',       topic: 'politics'  },
   // { channelId: 'PASTE_NOTJUSTOK_ID',     source: 'NotJustOk TV',   topic: 'music'     },
+  // ── Needs channel ID verification before enabling ──────────────────────────
+  // { channelId: 'PASTE_CONVERSATION_AFRICA_ID', source: 'The Conversation Africa', topic: 'science' },
+  // { channelId: 'PASTE_AFROPOLITAN_ID',         source: 'Afropolitan',             topic: 'tech'    },
+  // { channelId: 'PASTE_TECHPOINT_AFRICA_ID',    source: 'Techpoint Unscripted',    topic: 'tech'    },
 ];
 
 // Per-run targets — how many items of each type to publish per hourly ingest.
