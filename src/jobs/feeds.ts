@@ -26,7 +26,7 @@ export const NEWS_FEEDS: NewsFeed[] = [
   { url: 'https://disruptafrica.com/feed/',                 source: 'Disrupt Africa',         topic: 'tech'         },
   { url: 'https://itweb.africa/rss',                        source: 'ITWeb Africa',           topic: 'tech'         },
   { url: 'https://techcentral.co.za/feed/',                 source: 'TechCentral',            topic: 'tech'         },
-  { url: 'https://www.techzim.co.zw/feed/',                 source: 'Techzim',                topic: 'tech'         },
+  { url: 'https://www.dignited.com/feed/',                  source: 'Dignited',               topic: 'tech'         },
 
   // ── Tech — International ──────────────────────────────────────────────────
   { url: 'https://www.theverge.com/rss/index.xml',          source: 'The Verge',              topic: 'tech'         },
@@ -80,7 +80,7 @@ export const NEWS_FEEDS: NewsFeed[] = [
   { url: 'https://www.notjustok.com/feed/',                       source: 'NotJustOk',              topic: 'music'  },
   { url: 'https://www.bellanaija.com/music/feed/',                source: 'BellaNaija Music',       topic: 'music'  },
   { url: 'https://www.bellanaija.com/category/nollywood/feed/',   source: 'BellaNaija Nollywood',   topic: 'film'   },
-  { url: 'https://www.pulse.ng/rss.xml',                            source: 'Pulse Entertainment',    topic: 'music'  },
+  { url: 'https://guardian.ng/entertainment/feed/',                 source: 'Guardian Entertainment', topic: 'music'  },
   { url: 'https://kemifilani.ng/feed/',                           source: 'Kemi Filani',            topic: 'film'   },
   { url: 'https://www.naijavibe.net/feed/',                       source: 'NaijaVibe',              topic: 'music'  },
   { url: 'https://whatkeptmeup.com/feed/',                        source: 'What Kept Me Up',        topic: 'music'  },
@@ -118,7 +118,7 @@ export const NEWS_FEEDS: NewsFeed[] = [
   { url: 'https://www.bellanaija.com/lifestyle/feed/',          source: 'BellaNaija Lifestyle',   topic: 'fashion'   },
   { url: 'https://www.bellanaija.com/beauty/feed/',             source: 'BellaNaija Beauty',      topic: 'fashion'   },
   { url: 'https://www.bellanaijastyle.com/feed/',               source: 'BellaNaija Style',       topic: 'fashion'   },
-  { url: 'https://genevievemagazine.com/feed/',                 source: 'Genevieve Magazine',     topic: 'fashion'   },
+  { url: 'https://www.fashionghana.com/site/feed/',             source: 'Fashion Ghana',          topic: 'fashion'   },
   { url: 'https://www.pulse.ng/lifestyle/rss.xml',              source: 'Pulse Lifestyle',        topic: 'fashion'   },
   { url: 'https://www.zikoko.com/feed/',                        source: 'Zikoko',                 topic: 'fashion'   },
   { url: 'https://itsred.tv/feed/',                             source: 'REDTV',                  topic: 'fashion'   },
@@ -171,7 +171,7 @@ export const NEWS_FEEDS: NewsFeed[] = [
   { url: 'https://guardian.ng/category/features/health/feed/', source: 'Guardian Health NG',     topic: 'health'       },
 
   // ── Health — Africa ───────────────────────────────────────────────────────
-  { url: 'https://health-e.org.za/feed/',                      source: 'Health-e News',           topic: 'health'       },
+  { url: 'https://www.groundup.org.za/feed/',                  source: 'GroundUp',                topic: 'health'       },
   { url: 'https://allafrica.com/health/rss2.0.xml',             source: 'AllAfrica Health',       topic: 'health'       },
   { url: 'https://bhekisisa.org/feed/',                        source: 'Bhekisisa',               topic: 'health'       },
   { url: 'https://www.afro.who.int/rss.xml',                  source: 'WHO Africa',              topic: 'health'       },
@@ -191,7 +191,7 @@ export const NEWS_FEEDS: NewsFeed[] = [
   // ── Science — Africa ──────────────────────────────────────────────────────
   { url: 'https://www.scidev.net/sub-saharan-africa/feed/',    source: 'SciDev.Net Africa',       topic: 'science'      },
   { url: 'https://theconversation.com/africa/articles.atom',   source: 'The Conversation Africa', topic: 'science'      },
-  { url: 'https://www.aasciences.africa/news/feed/',           source: 'African Academy of Sciences', topic: 'science'  },
+  { url: 'https://phys.org/rss-feed/',                         source: 'Phys.org',                topic: 'science'      },
 
   // ── Science — International ───────────────────────────────────────────────
   { url: 'https://feeds.nature.com/nature/rss/current',        source: 'Nature',                  topic: 'science'      },
@@ -215,7 +215,7 @@ export const NEWS_FEEDS: NewsFeed[] = [
 
   // ── Politics — Africa ─────────────────────────────────────────────────────
   { url: 'https://issafrica.org/iss-today/feed/',              source: 'ISS Africa',               topic: 'politics'     },
-  { url: 'https://allafrica.com/stories/rss2.0.xml',          source: 'AllAfrica Politics',        topic: 'politics'     },
+  { url: 'https://allafrica.com/stories/rss2.0.xml',           source: 'AllAfrica',                 topic: 'politics'     },
   { url: 'https://www.theafricareport.com/feed/',              source: 'The Africa Report',        topic: 'politics'     },
 
   // ── Politics — International ──────────────────────────────────────────────
@@ -231,7 +231,7 @@ export const NEWS_FEEDS: NewsFeed[] = [
   // ── Faith & Philosophy — Africa ───────────────────────────────────────────
   { url: 'https://theelephant.info/feed/',                         source: 'The Elephant',            topic: 'faith'        },
   { url: 'https://africasacountry.com/feed/',                      source: 'Africa Is A Country',     topic: 'faith'        },
-  { url: 'https://allafrica.com/stories/rss2.0.xml',               source: 'AllAfrica Religion',      topic: 'faith'        },
+  { url: 'https://www.vanguardngr.com/category/religion/feed/',     source: 'Vanguard Religion',       topic: 'faith'        },
 
   // ── Faith & Philosophy — International ────────────────────────────────────
   { url: 'https://aeon.co/feed.rss',                               source: 'Aeon',                    topic: 'faith'        },
@@ -263,10 +263,9 @@ export const NEWS_FEEDS: NewsFeed[] = [
 
   // ── Sports > Basketball sub-feed (keywords: basketball, nba, d'tigers, fiba) ────
   { url: 'https://www.basketballnews.com/feed/',            source: 'Basketball News',        topic: 'sports'       },
-  { url: 'https://www.nba.com/news/rss.xml',                source: 'NBA News',               topic: 'sports'       },
 
   // ── Sports > Athletics sub-feed (keywords: athletics, sprints, olympics, track) ─
-  { url: 'https://worldathletics.org/rss/news',             source: 'World Athletics',        topic: 'sports'       },
+  { url: 'https://feeds.bbci.co.uk/sport/athletics/rss.xml', source: 'BBC Sport Athletics',    topic: 'sports'       },
   { url: 'https://athleticsweekly.com/feed/',               source: 'Athletics Weekly',       topic: 'sports'       },
   { url: 'https://www.insidethegames.biz/rss.xml',          source: 'Inside the Games',       topic: 'sports'       },
 ];
@@ -309,7 +308,7 @@ export const PODCAST_FEEDS: NewsFeed[] = [
 
   // ── Music ────────────────────────────────────────────────────────────────
   { url: 'https://afrobeatsintelligence.substack.com/feed',                 source: 'Afrobeats Intelligence',    topic: 'music'   },
-  { url: 'https://songexploder.net/feed/podcast',                           source: 'Song Exploder',             topic: 'music'   },
+  { url: 'https://feeds.simplecast.com/song-exploder',                      source: 'Song Exploder',             topic: 'music'   },
   { url: 'https://feeds.npr.org/510019/podcast.xml',                        source: 'All Songs Considered',      topic: 'music'   },
   { url: 'https://feeds.npr.org/510310/podcast.xml',                        source: 'Tiny Desk Concerts',        topic: 'music'   },
 
@@ -320,7 +319,7 @@ export const PODCAST_FEEDS: NewsFeed[] = [
 
   // ── Education ────────────────────────────────────────────────────────────
   { url: 'https://feeds.buzzsprout.com/2265341.rss',                        source: 'The EdSurge Podcast',       topic: 'education'},
-  { url: 'https://feeds.podbean.com/futureu/feed.xml',                      source: 'Future U',                  topic: 'education'},
+  { url: 'https://feeds.buzzsprout.com/209864.rss',                         source: 'Future U',                  topic: 'education'},
   { url: 'https://educationnext.org/feed/',                                  source: 'Education Next',            topic: 'education'},
 
   // ── Fashion, Travel & Lifestyle ───────────────────────────────────────────
@@ -331,7 +330,7 @@ export const PODCAST_FEEDS: NewsFeed[] = [
 
   // ── Faith & Philosophy ───────────────────────────────────────────────────
   { url: 'https://philosophizethis.libsyn.com/rss',                         source: 'Philosophize This!',        topic: 'faith'   },
-  { url: 'https://feeds.simplecast.com/R7C8TjLD',                           source: 'On Being',                  topic: 'faith'   },
+  { url: 'https://feeds.megaphone.fm/onbeing',                              source: 'On Being',                  topic: 'faith'   },
   { url: 'https://partiallyexaminedlife.libsyn.com/rss', source: 'The Partially Examined Life', topic: 'faith' },
 
   // ── Tech > Security sub-feed podcasts ────────────────────────────────────
@@ -341,20 +340,20 @@ export const PODCAST_FEEDS: NewsFeed[] = [
 
   // ── Finance > Crypto sub-feed podcasts ───────────────────────────────────
   { url: 'https://unchained.libsyn.com/rss',                                 source: 'Unchained',                 topic: 'finance' },
-  { url: 'https://feeds.simplecast.com/what-bitcoin-did',                   source: 'What Bitcoin Did',          topic: 'finance' },
+  { url: 'https://feeds.simplecast.com/unchained-crypto',                   source: 'Unchained Crypto',          topic: 'finance' },
 
   // ── Science > Space sub-feed podcasts ────────────────────────────────────
-  { url: 'https://feeds.simplecast.com/startalk',                           source: 'StarTalk Radio',            topic: 'science' },
+  { url: 'https://feeds.simplecast.com/startalk-all-stars',                 source: 'StarTalk Radio',            topic: 'science' },
   { url: 'https://astronomycast.libsyn.com/rss',                             source: 'Astronomy Cast',            topic: 'science' },
 
   // ── Sports > Basketball sub-feed podcasts ────────────────────────────────
-  { url: 'https://feeds.megaphone.fm/theringer-nba',                        source: 'The Ringer NBA Show',       topic: 'sports'  },
+  { url: 'https://feeds.megaphone.fm/ESP2889401404',                        source: 'Hoop Collective',           topic: 'sports'  },
 
   // ── Music > Hip-Hop sub-feed podcasts ────────────────────────────────────
-  { url: 'https://feeds.megaphone.fm/drinkchamps',                           source: 'Drink Champs',              topic: 'music'   },
+  { url: 'https://feeds.simplecast.com/drink-champs',                       source: 'Drink Champs',              topic: 'music'   },
 
   // ── Music > Gospel sub-feed podcasts ─────────────────────────────────────
-  { url: 'https://elevation.church/podcast/feed/',                          source: 'Elevation Church',          topic: 'music'   },
+  { url: 'https://feeds.simplecast.com/elevation-church',                   source: 'Elevation Church',          topic: 'music'   },
 ];
 
 export interface YoutubeChannel {
