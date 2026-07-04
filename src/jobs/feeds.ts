@@ -34,6 +34,18 @@ export const NEWS_FEEDS: NewsFeed[] = [
   { url: 'https://feeds.arstechnica.com/arstechnica/index', source: 'Ars Technica',           topic: 'tech'         },
   { url: 'https://www.technologyreview.com/feed/',          source: 'MIT Technology Review',  topic: 'tech'         },
 
+  // ── Tech > Security sub-feed (keywords: cybersecurity, hack, breach, malware) ──
+  { url: 'https://feeds.feedburner.com/TheHackersNews',     source: 'The Hacker News',        topic: 'tech'         },
+  { url: 'https://krebsonsecurity.com/feed/',               source: 'Krebs on Security',      topic: 'tech'         },
+  { url: 'https://www.darkreading.com/rss.xml',             source: 'Dark Reading',           topic: 'tech'         },
+  { url: 'https://www.bleepingcomputer.com/feed/',          source: 'BleepingComputer',       topic: 'tech'         },
+  { url: 'https://www.securityweek.com/feed/',              source: 'SecurityWeek',           topic: 'tech'         },
+
+  // ── Tech > Telecom sub-feed (keywords: mtn, airtel, 5g, telecom, broadband) ───
+  { url: 'https://www.lightreading.com/rss.xml',            source: 'Light Reading',          topic: 'tech'         },
+  { url: 'https://www.mobileworldlive.com/feed/',           source: 'Mobile World Live',      topic: 'tech'         },
+  { url: 'https://blog.telegeography.com/rss.xml',          source: 'TeleGeography',          topic: 'tech'         },
+
   // ── Business & Finance — Nigeria ─────────────────────────────────────────
   { url: 'https://nairametrics.com/feed/',                  source: 'Nairametrics',           topic: 'economy'      },
   { url: 'https://businessday.ng/feed/',                    source: 'BusinessDay NG',         topic: 'finance'      },
@@ -52,6 +64,22 @@ export const NEWS_FEEDS: NewsFeed[] = [
   // FT, Bloomberg (news), WSJ have no reliable public RSS — Bloomberg covered via YouTube clips
   { url: 'https://feeds.reuters.com/reuters/businessNews',  source: 'Reuters Business',       topic: 'finance'      },
   { url: 'https://www.economist.com/finance-and-economics/rss.xml', source: 'The Economist', topic: 'finance'      },
+
+  // ── Finance > Crypto sub-feed (keywords: bitcoin, crypto, blockchain, web3) ───
+  { url: 'https://www.coindesk.com/arc/outboundfeeds/rss/', source: 'CoinDesk',               topic: 'finance'      },
+  { url: 'https://cointelegraph.com/rss',                   source: 'Cointelegraph',          topic: 'finance'      },
+  { url: 'https://www.theblock.co/rss.xml',                 source: 'The Block',              topic: 'finance'      },
+
+  // ── Finance > Naira/FX sub-feed (keywords: naira, forex, exchange rate, dollar) ─
+  { url: 'https://nairametrics.com/category/forex/feed/',   source: 'Nairametrics FX',        topic: 'finance'      },
+  { url: 'https://businessday.ng/category/bd-forex/feed/',  source: 'BusinessDay FX',         topic: 'finance'      },
+
+  // ── Finance > Investment sub-feed (keywords: invest, stock, bond, etf, dividend) ─
+  { url: 'https://nairametrics.com/category/investment/feed/', source: 'Nairametrics Investment', topic: 'finance'   },
+
+  // ── Finance > Insurance sub-feed (keywords: insurance, pension, naicom, pencom) ─
+  { url: 'https://nairametrics.com/category/insurance/feed/', source: 'Nairametrics Insurance', topic: 'finance'    },
+  { url: 'https://www.insurancebusinessmag.com/rss.xml',    source: 'Insurance Business',     topic: 'finance'      },
 
   // ── Music / Film & TV — Nigeria ──────────────────────────────────────────
   { url: 'https://www.notjustok.com/feed/',                       source: 'NotJustOk',              topic: 'music'  },
@@ -79,6 +107,21 @@ export const NEWS_FEEDS: NewsFeed[] = [
   { url: 'https://deadline.com/feed/',                            source: 'Deadline',               topic: 'film'   },
   { url: 'https://www.billboard.com/feed/',                       source: 'Billboard',              topic: 'music'  },
   { url: 'https://www.indiewire.com/feed/',                       source: 'IndieWire',              topic: 'film'   },
+
+  // ── Music > Gospel sub-feed (keywords: gospel, worship, praise, christian music) ─
+  { url: 'https://gospelmusic.org/feed/',                         source: 'Gospel Music Assoc.',    topic: 'music'  },
+  { url: 'https://ccmmagazine.com/feed/',                         source: 'CCM Magazine',           topic: 'music'  },
+  { url: 'https://relevantmagazine.com/feed/',                    source: 'Relevant Magazine',      topic: 'music'  },
+  { url: 'https://www.christianpost.com/rss/',                    source: 'Christian Post Music',   topic: 'music'  },
+
+  // ── Music > Hip-Hop sub-feed (keywords: hip hop, rap, trap, olamide, falz) ──────
+  { url: 'https://hiphopdx.com/feed',                             source: 'HipHopDX',               topic: 'music'  },
+  { url: 'https://www.xxlmag.com/feed/',                          source: 'XXL Magazine',           topic: 'music'  },
+  { url: 'https://www.complex.com/music/feed/',                   source: 'Complex Music',          topic: 'music'  },
+
+  // ── Music > Industry sub-feed (keywords: record label, streaming, music award) ──
+  { url: 'https://www.musicbusinessworldwide.com/feed/',          source: 'Music Business Worldwide', topic: 'music'},
+  { url: 'https://themusicnetwork.com/feed/',                     source: 'The Music Network',      topic: 'music'  },
 
   // ── Fashion / Travel & Lifestyle — Nigeria ───────────────────────────────
   { url: 'https://www.bellanaija.com/lifestyle/feed/',          source: 'BellaNaija Lifestyle',   topic: 'fashion'   },
@@ -174,6 +217,12 @@ export const NEWS_FEEDS: NewsFeed[] = [
   { url: 'https://www.livescience.com/feeds/all',              source: 'Live Science',             topic: 'science'      },
   { url: 'https://theconversation.com/global/articles.atom',   source: 'The Conversation',        topic: 'science'      },
 
+  // ── Science > Space sub-feed (keywords: space, nasa, satellite, rocket, orbit) ─
+  { url: 'https://www.space.com/feeds/all',                    source: 'Space.com',               topic: 'science'      },
+  { url: 'https://spacenews.com/feed/',                        source: 'SpaceNews',               topic: 'science'      },
+  { url: 'https://www.nasa.gov/rss/dyn/breaking_news.rss',     source: 'NASA',                    topic: 'science'      },
+  { url: 'https://www.planetary.org/articles.rss',             source: 'The Planetary Society',   topic: 'science'      },
+
   // ── Politics — Nigeria ────────────────────────────────────────────────────
   { url: 'https://www.premiumtimesng.com/politics/feed/',      source: 'Premium Times Politics',  topic: 'politics'     },
   { url: 'https://www.thecable.ng/politics/feed/',             source: 'TheCable Politics',        topic: 'politics'     },
@@ -232,6 +281,21 @@ export const NEWS_FEEDS: NewsFeed[] = [
   { url: 'https://www.skysports.com/rss/12040',             source: 'Sky Sports',             topic: 'sports'       },
   { url: 'https://www.espn.com/espn/rss/news',              source: 'ESPN',                   topic: 'sports'       },
   { url: 'https://feeds.bbci.co.uk/sport/rss.xml',          source: 'BBC Sport',              topic: 'sports'       },
+
+  // ── Sports > Football sub-feed (keywords: football, super eagles, premier league) ─
+  { url: 'https://feeds.bbci.co.uk/sport/football/rss.xml', source: 'BBC Sport Football',    topic: 'sports'       },
+  { url: 'https://www.skysports.com/rss/12040',             source: 'Sky Sports Football',    topic: 'sports'       },
+  { url: 'https://talksport.com/feed/',                     source: 'talkSPORT',              topic: 'sports'       },
+
+  // ── Sports > Basketball sub-feed (keywords: basketball, nba, d'tigers, fiba) ────
+  { url: 'https://hoopshype.com/feed/',                     source: 'HoopsHype',              topic: 'sports'       },
+  { url: 'https://www.basketballnews.com/feed/',            source: 'Basketball News',        topic: 'sports'       },
+  { url: 'https://www.nba.com/news/rss.xml',                source: 'NBA News',               topic: 'sports'       },
+
+  // ── Sports > Athletics sub-feed (keywords: athletics, sprints, olympics, track) ─
+  { url: 'https://worldathletics.org/rss/news',             source: 'World Athletics',        topic: 'sports'       },
+  { url: 'https://athleticsweekly.com/feed/',               source: 'Athletics Weekly',       topic: 'sports'       },
+  { url: 'https://www.insidethegames.biz/rss',              source: 'Inside the Games',       topic: 'sports'       },
 ];
 
 export const PODCAST_FEEDS: NewsFeed[] = [
@@ -296,6 +360,31 @@ export const PODCAST_FEEDS: NewsFeed[] = [
   { url: 'https://philosophizethis.libsyn.com/rss',                         source: 'Philosophize This!',        topic: 'faith'   },
   { url: 'https://onbeing.org/feed/podcast/',                               source: 'On Being',                  topic: 'faith'   },
   { url: 'https://partiallyexaminedlife.libsyn.com/rss', source: 'The Partially Examined Life', topic: 'faith' },
+
+  // ── Tech > Security sub-feed podcasts ────────────────────────────────────
+  { url: 'https://feeds.megaphone.fm/darknetdiaries',                        source: 'Darknet Diaries',           topic: 'tech'    },
+  { url: 'https://risky.biz/feeds/risky-business/',                          source: 'Risky Business',            topic: 'tech'    },
+  { url: 'https://feeds.twit.tv/sn.xml',                                     source: 'Security Now',              topic: 'tech'    },
+
+  // ── Finance > Crypto sub-feed podcasts ───────────────────────────────────
+  { url: 'https://unchained.libsyn.com/rss',                                 source: 'Unchained',                 topic: 'finance' },
+  { url: 'https://www.whatbitcoindid.com/podcast-feed.xml',                  source: 'What Bitcoin Did',          topic: 'finance' },
+
+  // ── Science > Space sub-feed podcasts ────────────────────────────────────
+  { url: 'https://feeds.simplecast.com/mHbFiIHq',                            source: 'StarTalk Radio',            topic: 'science' },
+  { url: 'https://astronomycast.libsyn.com/rss',                             source: 'Astronomy Cast',            topic: 'science' },
+
+  // ── Sports > Basketball sub-feed podcasts ────────────────────────────────
+  { url: 'https://feeds.megaphone.fm/thelowepost',                           source: 'The Lowe Post',             topic: 'sports'  },
+  { url: 'https://feeds.megaphone.fm/ringerNBA',                             source: 'The Ringer NBA Show',       topic: 'sports'  },
+
+  // ── Music > Hip-Hop sub-feed podcasts ────────────────────────────────────
+  { url: 'https://feeds.megaphone.fm/drinkchamps',                           source: 'Drink Champs',              topic: 'music'   },
+  { url: 'https://feeds.simplecast.com/2RJkzMb3',                            source: 'Questlove Supreme',         topic: 'music'   },
+
+  // ── Music > Gospel sub-feed podcasts ─────────────────────────────────────
+  { url: 'https://feeds.simplecast.com/elevation_church',                    source: 'Elevation Church',          topic: 'music'   },
+  { url: 'https://feeds.megaphone.fm/gospelproject',                         source: 'The Gospel Project',        topic: 'music'   },
 ];
 
 export interface YoutubeChannel {
