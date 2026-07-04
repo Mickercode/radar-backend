@@ -84,30 +84,31 @@ function parseSummaryResult(p: Record<string, unknown>): SummaryResult | null {
 
 function buildPrompt(title: string, body: string, topic: string): string {
   const topicPersonas: Record<string, string[]> = {
-    politics:   ['a normal citizen or family', 'a small business owner or trader', 'a student or young person', 'a community leader or landlord'],
-    economy:    ['a salary earner or employee', 'a small business owner, trader, or market woman', 'a student or job seeker', 'a landlord or property owner'],
-    finance:    ['a bank customer or someone who saves money', 'a small business owner or trader who uses POS or mobile banking', 'a student or young person managing money', 'someone who sends or receives money from family abroad'],
-    tech:       ['someone who works in tech or uses apps for work', 'a small business owner using technology to sell or operate', 'a student or someone learning digital skills', 'a content creator or freelancer who works online'],
-    sports:     ['a sports fan who watches matches', 'someone who bets on sports', 'a young athlete or someone who plays sport locally', 'a coach, club owner, or sports business owner'],
-    music:      ['a music fan and listener', 'an upcoming artist, singer, or performer', 'a music producer, sound engineer, or studio owner', 'someone who earns money from music — streaming, shows, or promotions'],
-    film:       ['a movie lover and cinema-goer', 'an aspiring filmmaker, actor, or content creator', 'a cinema owner or film distributor', 'a Nollywood fan following the industry'],
-    health:     ['an ordinary person or patient', 'a parent with children', 'a small healthcare worker or pharmacy owner', 'someone paying for health insurance or hospital bills'],
-    education:  ['a student — secondary school or university', 'a parent paying school fees', 'a teacher or school administrator', 'someone looking for scholarships or study opportunities'],
-    business:   ['a small business owner or trader', 'an employee or salary earner', 'an entrepreneur or startup founder', 'a market trader or artisan who works daily'],
-    climate:    ['a farmer or someone who grows food', 'a person living near water, coast, or flood-risk area', 'a city dweller dealing with heat, flooding, or water shortage', 'a small business owner affected by weather or energy costs'],
-    fashion:    ['a fashion lover who buys clothes regularly', 'a designer, tailor, or fashion student', 'a fashion business owner or boutique operator', 'someone who buys or sells fabric or clothes in the market'],
-    travel:     ['someone planning a local or international trip', 'a traveller who needs a visa or passport', 'a hotel owner, travel agent, or tour guide', 'a student or worker going abroad for school or work'],
-    faith:      ['a regular church member or mosque attendee', 'a faith community leader or pastor', 'a parent raising children in a faith community', 'someone whose work or life intersects with faith organisations'],
+    politics:   ['a citizen or family affected by government decisions', 'a small business owner or trader navigating policy changes', 'a student or young person building a future', 'a community leader, local official, or civil society member'],
+    economy:    ['a salary earner or employee', 'a small business owner, trader, or market woman', 'a student or job seeker', 'an investor, landlord, or property owner'],
+    finance:    ['someone who saves money or uses a bank', 'a small business owner or trader who uses mobile banking or POS', 'a student or young person learning to manage money', 'someone who sends or receives remittances from abroad'],
+    tech:       ['someone who works in tech or uses apps for work', 'a small business owner using technology to operate or sell', 'a student or someone building digital skills', 'a content creator or freelancer who earns online'],
+    sports:     ['a passionate sports fan', 'someone who bets or follows fantasy leagues', 'a young athlete or someone who plays sport locally', 'a coach, club owner, or sports entrepreneur'],
+    music:      ['a music fan and daily listener', 'an upcoming artist, singer, or performer', 'a music producer, sound engineer, or studio owner', 'someone who earns from music — streaming, live shows, or brand partnerships'],
+    film:       ['a movie lover and regular viewer', 'an aspiring filmmaker, actor, or content creator', 'a cinema owner, distributor, or entertainment entrepreneur', 'someone who follows the film industry for culture or investment'],
+    health:     ['an ordinary person managing their own health', 'a parent responsible for a family', 'a healthcare worker, pharmacist, or clinic owner', 'someone navigating health insurance or hospital costs'],
+    education:  ['a student — secondary school or university level', 'a parent investing in a child\'s education', 'a teacher, lecturer, or school administrator', 'someone seeking scholarships, skills, or study opportunities abroad'],
+    business:   ['a small business owner or trader', 'an employee or salary earner', 'an entrepreneur or startup founder', 'an investor, executive, or corporate professional'],
+    climate:    ['a farmer or someone who depends on agriculture or fishing', 'a person living near water, coastline, or flood-risk areas', 'a city dweller dealing with heat, flooding, or energy costs', 'a business owner, policymaker, or investor in the energy transition'],
+    fashion:    ['a fashion lover who follows trends and buys regularly', 'a designer, tailor, or fashion student', 'a fashion business owner, boutique operator, or stylist', 'someone who buys or sells clothing, fabric, or beauty products'],
+    travel:     ['someone planning a local or international trip', 'a traveller managing visas, passports, or airline costs', 'a hotel owner, travel agent, or tour guide', 'a student or professional relocating abroad for study or work'],
+    faith:      ['a regular churchgoer or mosque attendee', 'a pastor, imam, or faith community leader', 'a parent raising children with faith values', 'someone whose business or career intersects with religious institutions'],
+    science:    ['a curious person who follows science and discovery', 'a student, researcher, or academic in any field', 'a healthcare worker or practitioner interested in new findings', 'an investor, entrepreneur, or policymaker shaped by scientific advances'],
   };
 
   const personas = topicPersonas[topic.toLowerCase()]
-    ?? ['a normal citizen or family', 'a small business owner or trader', 'a student or young person', 'someone in the formal or professional sector'];
+    ?? ['a regular person navigating daily life', 'a small business owner or trader', 'a student or young adult', 'someone in the professional or formal sector'];
 
   const personaGuide = personas
-    .map((p) => `If you are ${p}: [2-4 specific sentences. What this means for them. What they should do or avoid. Use real Nigerian examples — naira amounts, local shops, mobile apps, daily routines.]`)
+    .map((p) => `If you are ${p}: [2-4 specific sentences. What does this news mean for their daily life, work, or future? What should they do, stop, start, or watch? Use concrete examples — specific tools, amounts, habits, or decisions. Only reference Nigerian or African examples where the story genuinely connects to Nigeria or Africa; otherwise use universal examples any reader can act on.]`)
     .join('\n\n');
 
-  return `You are Radar's editorial AI. Write for ambitious Nigerian/African readers. A secondary school student must understand every sentence. PUBLISH LESS, MAKE IT SHARPER, MAKE IT STICK.
+  return `You are Radar's editorial AI. Write for ambitious readers — curious, busy, and hungry for real understanding. A secondary school student must understand every sentence. PUBLISH LESS, MAKE IT SHARPER, MAKE IT STICK.
 
 INPUT
 Title: ${title}
@@ -117,8 +118,9 @@ Source topic: ${topic}
 LANGUAGE RULES — never break these:
 - Simple English only. Maximum 15 words per sentence.
 - No markdown, no dashes, no bullets in prose fields (what, why, how_it_matters_to_you). Plain sentences only.
-- Always ground the story in Nigerian/African reality: naira, fuel prices, data costs, power supply, financial inclusion, small business life.
-- Each section must do DIFFERENT work — never repeat the same point.
+- Be deeply human. Use proverbs, analogies, psychology, history, or economics to make the point land.
+- Do NOT force a Nigeria or Africa angle if the story has no genuine connection to Nigeria or Africa. Write to the universal human stakes instead.
+- Each section must do DIFFERENT work — never repeat the same point across sections.
 
 === SECTIONS (follow this exact order) ===
 
@@ -126,9 +128,9 @@ LANGUAGE RULES — never break these:
 
 2) KEY TAKEAWAYS (field: "key_takeaways") — Array of 3 to 5 items. Mix: one real risk, one opportunity most people miss, one non-obvious observation. Each is one complete sentence in very simple English. No dash, no bullet, no number. Just the sentence.
 
-3) WHY IT MATTERS (field: "why") — About 150 words of plain prose. Show the country-level or society-level impact. How does this change things for Nigeria or Africa as a whole? Connect to real effects people will feel. Not a list. Different from the takeaways.
+3) WHY IT MATTERS (field: "why") — Minimum 200 words of plain prose. Do NOT summarise the article. This section is about BIGGER PICTURE and HUMAN STAKES. Go beyond what happened. Ask: what does this reveal about how the world actually works? What timeless tension — power, money, survival, ambition, fairness — does this story expose? Who gains, who loses, and why does it tend to go this way? Use one concrete comparison, a proverb, or a reference to history, economics, or human psychology to make the insight land. Make the reader feel the weight of the story, not just understand the facts. Not a list. Different from the takeaways.
 
-4) HOW IT MATTERS TO YOU (field: "how_it_matters_to_you") — This is the most important section. Write 3 to 4 separate paragraphs, one for each type of reader. Each paragraph must start with exactly this format: "If you are a [person type]:" — then give 2 to 4 plain sentences of specific advice for that person. Use Nigerian examples: naira amounts, market prices, mobile apps, daily routines. Tell them what to do, what to stop, what to watch. Be direct. No vague language. No repeated points from earlier sections.
+4) THE EDGE (field: "how_it_matters_to_you") — Minimum 200 words total. This is the most important section. Write 3 to 4 separate paragraphs, one for each type of reader. Each paragraph must start with exactly this format: "If you are a [person type]:" — then give 2 to 4 plain sentences of specific, actionable advice. What should they do, stop, start, or watch? Use concrete examples — specific tools, amounts, habits, or decisions. Only use Nigerian or African examples where the story genuinely connects to Nigeria or Africa. Otherwise use universal examples any reader can act on immediately. Be direct. No vague language. No repeated points from earlier sections.
 
 Write these paragraphs in order:
 ${personaGuide}
@@ -146,9 +148,9 @@ ${personaGuide}
 NIGERIA RELEVANCE (0-3): 0=none 1=tangential 2=relevant 3=Nigeria/Africa-specific
 
 TIER:
-- 1 (Must-see): >=3 tests pass AND nigeria_relevance>=2 AND how_it_matters_to_you is concrete and specific
+- 1 (Must-see): >=3 tests pass AND (nigeria_relevance>=2 OR the story has clear universal significance) AND how_it_matters_to_you is concrete and specific
 - 2 (Strong): >=3 tests pass
-- 3 (Weak): <3 — dropped
+- 3 (Weak): <3 tests pass — dropped
 
 OUTPUT — strict JSON only: { "relevant", "what", "key_takeaways":[], "why", "how_it_matters_to_you", "glossary":[], "forwardable", "advantage", "non_obvious", "learnable", "nigeria_relevance", "tier" }`;
 }
@@ -190,7 +192,7 @@ async function callOpenRouter(prompt: string, apiKey: string): Promise<SummaryRe
       },
       body: JSON.stringify({
         model: OR_MODEL,
-        max_tokens: 1800,
+        max_tokens: 2500,
         temperature: 0.25,
         response_format: { type: 'json_object' },
         messages: [
@@ -260,7 +262,7 @@ async function callClaude(prompt: string, apiKey: string): Promise<SummaryResult
         },
         body: JSON.stringify({
           model: CLAUDE_MODEL,
-          max_tokens: 1800,
+          max_tokens: 2500,
           temperature: 0.25,
           messages: [{ role: 'user', content: prompt }],
           tools: [SUMMARY_TOOL],
