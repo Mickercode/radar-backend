@@ -320,16 +320,15 @@ export const YOUTUBE_CHANNELS: YoutubeChannel[] = [
   // { channelId: 'PASTE_NOTJUSTOK_ID',     source: 'NotJustOk TV',   topic: 'music'     },
 ];
 
-// Per-run targets — how many of each type to publish per ingest.
-// Round-robin across sources means these spread across all outlets.
-// Dedup makes re-runs cheap (only new items hit the AI editorial engine).
-// Kept low to fit within Render free-tier 512 MB — ingest runs every 3h so
-// smaller batches accumulate. Increase once you're on a paid instance.
-export const TARGET_NEWS     = 75;
-export const TARGET_PODCASTS = 8;
-export const TARGET_CLIPS    = 5;
+// Per-run targets — how many items of each type to publish per hourly ingest.
+// Mediastack and RSS each get their own budget so neither starves the other.
+// Dedup (alreadyHave) makes re-runs cheap: only genuinely new articles hit the AI.
+export const TARGET_MEDIASTACK = 20;  // Mediastack (Nigeria + Africa API)
+export const TARGET_NEWS       = 40;  // RSS news feeds (75+ sources, shuffled)
+export const TARGET_PODCASTS   = 15;  // Podcast feeds (38 sources, shuffled)
+export const TARGET_CLIPS      =  8;  // YouTube clips
 
-// How many recent items to pull from each source as candidates.
+// How many recent items to pull from each source as candidates per run.
 export const PER_NEWS_FEED      = 5;
 export const PER_PODCAST_FEED   = 2;
 export const PER_YOUTUBE_CHANNEL = 5;

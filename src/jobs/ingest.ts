@@ -13,6 +13,7 @@ import {
   PODCAST_FEEDS,
   PROMO_TITLE_PATTERNS,
   TARGET_CLIPS,
+  TARGET_MEDIASTACK,
   TARGET_NEWS,
   TARGET_PODCASTS,
   YOUTUBE_CHANNELS,
@@ -208,8 +209,6 @@ async function ingestNewsFromMediastack(stats: Stats, budget: { left: number }) 
     return;
   }
 
-  // Cap at 25 per call — 50 sequential AI calls in one run accumulates heap faster
-  // than V8's GC can collect it on the 512MB Render instance.
   const ngArticles = await fetchMediastack({ countries: 'ng', categories: 'general,business,technology,sports', limit: '25' });
   const africaArticles = await fetchMediastack({ countries: 'gh,ke,za,eg', categories: 'business,technology,general', limit: '25' });
 
@@ -524,17 +523,17 @@ export async function runIngest() {
   } else {
     console.log(`[ingest] MEDIASTACK_API_KEY present ✓ (${msKey.slice(0, 4)}****)`);
   }
-  console.log(`[ingest] targets — news=${TARGET_NEWS} podcasts=${TARGET_PODCASTS} clips=${TARGET_CLIPS}`);
+  console.log(`[ingest] sources — ${NEWS_FEEDS.length} news feeds, ${PODCAST_FEEDS.length} podcast feeds, ${YOUTUBE_CHANNELS.length} YouTube channels`);
+  console.log(`[ingest] targets — mediastack=${TARGET_MEDIASTACK} rss-news=${TARGET_NEWS} podcasts=${TARGET_PODCASTS} clips=${TARGET_CLIPS}`);
 
   const stats: Stats = {
     news: 0, podcasts: 0, clips: 0,
     skippedPromo: 0, skippedDuration: 0, skippedIrrelevant: 0, skippedTier3: 0,
   };
 
-  // Mediastack is the primary news source; RSS supplements niche topics.
-  const newsBudget = { left: TARGET_NEWS };
-  await ingestNewsFromMediastack(stats, newsBudget);
-  if (newsBudget.left > 0) await ingestNews(stats, newsBudget);
+  // Mediastack and RSS each have their own budget so neither starves the other.
+  await ingestNewsFromMediastack(stats, { left: TARGET_MEDIASTACK });
+  await ingestNews(stats, { left: TARGET_NEWS });
 
   await ingestPodcasts(stats, { left: TARGET_PODCASTS });
   await ingestClips(stats, { left: TARGET_CLIPS });
