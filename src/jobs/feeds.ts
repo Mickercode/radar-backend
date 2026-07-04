@@ -193,6 +193,8 @@ export const NEWS_FEEDS: NewsFeed[] = [
   { url: 'https://allafrica.com/stories/rss2.0.xml?category=health', source: 'AllAfrica Health', topic: 'health'       },
   { url: 'https://bhekisisa.org/feed/',                        source: 'Bhekisisa',               topic: 'health'       },
   { url: 'https://www.afro.who.int/feeds/news',                source: 'WHO Africa',              topic: 'health'       },
+  { url: 'https://africacdc.org/feed/',                        source: 'Africa CDC',              topic: 'health'       },
+  { url: 'https://www.medicalbrief.co.za/feed/',               source: 'MedicalBrief',            topic: 'health'       },
 
   // ── Health — International ────────────────────────────────────────────────
   { url: 'https://www.thelancet.com/rssfeed/lancet_current.xml', source: 'The Lancet',           topic: 'health'       },
