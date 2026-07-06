@@ -380,19 +380,19 @@ export const YOUTUBE_CHANNELS: YoutubeChannel[] = [
 // Dedup (alreadyHave) makes re-runs cheap: only genuinely new articles hit the AI.
 export const TARGET_MEDIASTACK = 20;  // Mediastack (Nigeria + Africa API)
 export const TARGET_NEWS       = 40;  // RSS news feeds (75+ sources, shuffled)
-export const TARGET_PODCASTS   = 15;  // Podcast feeds (38 sources, shuffled)
+export const TARGET_PODCASTS   = 40;  // Podcast feeds (39 sources, shuffled)
 export const TARGET_CLIPS      =  8;  // YouTube clips
 
 // How many recent items to pull from each source as candidates per run.
-export const PER_NEWS_FEED      = 5;
-export const PER_PODCAST_FEED   = 2;
+export const PER_NEWS_FEED       = 5;
+export const PER_PODCAST_FEED    = 5;  // check 5 recent episodes per feed
 export const PER_YOUTUBE_CHANNEL = 5;
 
-export const MIN_PODCAST_DURATION_SEC = 300;
-export const MAX_PODCAST_DURATION_SEC = 4 * 60 * 60;
-export const MIN_CLIP_DURATION_SEC    = 60;       // at least 1 minute
-export const MAX_CLIP_DURATION_SEC    = 20 * 60;  // up to 20 minutes
-export const MAX_PODCAST_AGE_DAYS     = 14;
+export const MIN_PODCAST_DURATION_SEC = 120;       // 2 min — captures bonus/short episodes
+export const MAX_PODCAST_DURATION_SEC = 5 * 60 * 60; // 5 hours — long-form included
+export const MIN_CLIP_DURATION_SEC    = 60;        // at least 1 minute
+export const MAX_CLIP_DURATION_SEC    = 20 * 60;   // up to 20 minutes
+export const MAX_PODCAST_AGE_DAYS     = 30;        // 30-day backlog on first run
 
 export const PROMO_TITLE_PATTERNS: RegExp[] = [
   /^\s*trailer\b/i,
