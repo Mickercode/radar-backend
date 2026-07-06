@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "prisma generate && tsc -p tsconfig.json && prisma db push --accept-data-loss",
+    "build": "prisma generate && ./node_modules/.bin/tsc -p tsconfig.json && prisma db push --accept-data-loss",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
     "prisma:generate": "prisma generate",
