@@ -505,7 +505,17 @@ async function ingestClips(stats: Stats, budget: { left: number }) {
 
 // ── Orchestrator ─────────────────────────────────────────────────────────────
 
+// INGEST_MODE controls which content types this run processes.
+// Set on the Render cron service environment:
+//   all      — news + podcasts + clips (default)
+//   news     — Mediastack + RSS news only
+//   podcasts — podcast feeds only (dedicated run, higher budget)
+//   clips    — YouTube clips only
+type IngestMode = 'all' | 'news' | 'podcasts' | 'clips';
+
 export async function runIngest() {
+  const mode = (process.env.INGEST_MODE ?? 'all') as IngestMode;
+
   if (!process.env.ANTHROPIC_API_KEY) {
     console.error('[ingest] ANTHROPIC_API_KEY is MISSING — every item will be dropped. Set it on this service.');
   } else {
@@ -523,7 +533,7 @@ export async function runIngest() {
   } else {
     console.log(`[ingest] MEDIASTACK_API_KEY present ✓ (${msKey.slice(0, 4)}****)`);
   }
-  console.log(`[ingest] sources — ${NEWS_FEEDS.length} news feeds, ${PODCAST_FEEDS.length} podcast feeds, ${YOUTUBE_CHANNELS.length} YouTube channels`);
+  console.log(`[ingest] mode=${mode} sources — ${NEWS_FEEDS.length} news feeds, ${PODCAST_FEEDS.length} podcast feeds, ${YOUTUBE_CHANNELS.length} YouTube channels`);
   console.log(`[ingest] targets — mediastack=${TARGET_MEDIASTACK} rss-news=${TARGET_NEWS} podcasts=${TARGET_PODCASTS} clips=${TARGET_CLIPS}`);
 
   const stats: Stats = {
@@ -531,12 +541,20 @@ export async function runIngest() {
     skippedPromo: 0, skippedDuration: 0, skippedIrrelevant: 0, skippedTier3: 0,
   };
 
-  // Mediastack and RSS each have their own budget so neither starves the other.
-  await ingestNewsFromMediastack(stats, { left: TARGET_MEDIASTACK });
-  await ingestNews(stats, { left: TARGET_NEWS });
+  const runNews     = mode === 'all' || mode === 'news';
+  const runPodcasts = mode === 'all' || mode === 'podcasts';
+  const runClips    = mode === 'all' || mode === 'clips';
 
-  await ingestPodcasts(stats, { left: TARGET_PODCASTS });
-  await ingestClips(stats, { left: TARGET_CLIPS });
+  // Podcast-only runs get a larger budget since they're not competing with news.
+  const podcastBudget = mode === 'podcasts' ? TARGET_PODCASTS * 2 : TARGET_PODCASTS;
+
+  if (runNews) {
+    await ingestNewsFromMediastack(stats, { left: TARGET_MEDIASTACK });
+    await ingestNews(stats, { left: TARGET_NEWS });
+  }
+
+  if (runPodcasts) await ingestPodcasts(stats, { left: podcastBudget });
+  if (runClips)    await ingestClips(stats, { left: TARGET_CLIPS });
 
   const total = stats.news + stats.podcasts + stats.clips;
 
