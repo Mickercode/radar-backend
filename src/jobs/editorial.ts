@@ -1,10 +1,11 @@
 // Editorial Quality Engine (PLAYBOOK §4A / §9) for the ingestion job.
-// Primary: OpenRouter/DeepSeek. Fallback: Claude. Circuit-breaker on billing errors.
+// Primary: OpenRouter/DeepSeek. Fallback: Claude. Third: Nemotron. Circuit-breaker on billing errors.
 import { jsonrepair } from 'jsonrepair';
 
 const CLAUDE_MODEL    = 'claude-sonnet-4-6';
 const CLAUDE_ENDPOINT = 'https://api.anthropic.com/v1/messages';
 const OR_MODEL        = 'deepseek/deepseek-chat';
+const NM_MODEL        = 'nvidia/llama-3.1-nemotron-70b-instruct:free';
 const OR_ENDPOINT     = 'https://openrouter.ai/api/v1/chat/completions';
 
 // Claude throttle — ~13 RPM cap. Not applied to OpenRouter.
@@ -224,6 +225,50 @@ async function callOpenRouter(prompt: string, apiKey: string): Promise<SummaryRe
   }
 }
 
+// ── Nemotron (third option, free tier) ───────────────────────────────────────
+
+async function callNemotron(prompt: string, apiKey: string): Promise<SummaryResult | null> {
+  try {
+    const res = await fetch(OR_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'HTTP-Referer': 'https://radarproapp.com',
+        'X-Title': 'Radar',
+      },
+      body: JSON.stringify({
+        model: NM_MODEL,
+        max_tokens: 2500,
+        temperature: 0.25,
+        response_format: { type: 'json_object' },
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a precise JSON generator. Respond with ONLY a valid JSON object. No markdown, no code fences, no explanation — raw JSON only.',
+          },
+          { role: 'user', content: prompt },
+        ],
+      }),
+    });
+
+    if (!res.ok) {
+      const errBody = (await res.text().catch(() => '')).slice(0, 200);
+      console.warn(`[editorial] Nemotron ${res.status}: ${errBody}`);
+      return null;
+    }
+
+    const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
+    const raw = data.choices?.[0]?.message?.content ?? '';
+    const parsed = robustJsonParse(raw);
+    if (!parsed) { console.warn('[editorial] Nemotron: could not parse response JSON'); return null; }
+    return parseSummaryResult(parsed);
+  } catch (e) {
+    console.warn('[editorial] Nemotron call threw:', (e as Error).message.slice(0, 120));
+    return null;
+  }
+}
+
 // ── Claude (fallback) ─────────────────────────────────────────────────────────
 
 const SUMMARY_TOOL = {
@@ -329,6 +374,12 @@ export async function generateSummary(
   // Fallback: Claude (skip if billing already failed this run)
   if (claudeKey && !claudeBillingFailed) {
     const result = await callClaude(prompt, claudeKey);
+    if (result) { consecutiveFailures = 0; return result; }
+  }
+
+  // Third option: Nemotron free tier
+  if (orKey) {
+    const result = await callNemotron(prompt, orKey);
     if (result) { consecutiveFailures = 0; return result; }
   }
 
