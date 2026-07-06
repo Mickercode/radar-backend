@@ -390,8 +390,8 @@ export const PER_YOUTUBE_CHANNEL = 5;
 
 export const MIN_PODCAST_DURATION_SEC = 120;       // 2 min — captures bonus/short episodes
 export const MAX_PODCAST_DURATION_SEC = 5 * 60 * 60; // 5 hours — long-form included
-export const MIN_CLIP_DURATION_SEC    = 60;        // at least 1 minute
-export const MAX_CLIP_DURATION_SEC    = 20 * 60;   // up to 20 minutes
+export const MIN_CLIP_DURATION_SEC    = 60;         // at least 1 minute
+export const MAX_CLIP_DURATION_SEC    = 3 * 60 * 60; // up to 3 hours (covers long-form YouTube)
 export const MAX_PODCAST_AGE_DAYS     = 30;        // 30-day backlog on first run
 
 export const PROMO_TITLE_PATTERNS: RegExp[] = [

@@ -210,6 +210,7 @@ async function ingestNewsFromMediastack(stats: Stats, budget: { left: number }) 
   }
 
   const ngArticles = await fetchMediastack({ countries: 'ng', categories: 'general,business,technology,sports', limit: '25' });
+  await new Promise(r => setTimeout(r, 2000)); // avoid 429 on free-tier Mediastack
   const africaArticles = await fetchMediastack({ countries: 'gh,ke,za,eg', categories: 'business,technology,general', limit: '25' });
 
   const all = [...ngArticles, ...africaArticles];
