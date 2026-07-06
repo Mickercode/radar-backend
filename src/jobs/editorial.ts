@@ -158,9 +158,11 @@ OUTPUT — strict JSON only: { "relevant", "what", "key_takeaways":[], "why", "h
 
 // ── JSON helpers ─────────────────────────────────────────────────────────────
 
-function robustJsonParse(raw: string): Record<string, unknown> | null {
-  // Strip markdown code fences DeepSeek sometimes adds
-  let s = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+function robustJsonParse(raw: string, label?: string): Record<string, unknown> | null {
+  // Strip reasoning/thinking blocks emitted by reasoning models before the JSON
+  let s = raw.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+  // Strip markdown code fences
+  s = s.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/m, '').trim();
 
   // Trim to outermost { ... } in case there's preamble/postamble text
   const start = s.indexOf('{');
@@ -176,6 +178,7 @@ function robustJsonParse(raw: string): Record<string, unknown> | null {
     return JSON.parse(repaired) as Record<string, unknown>;
   } catch {}
 
+  if (label) console.warn(`[editorial] ${label} raw (first 300):`, raw.slice(0, 300));
   return null;
 }
 
@@ -216,8 +219,8 @@ async function callOpenRouter(prompt: string, apiKey: string): Promise<SummaryRe
 
     const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
     const raw = data.choices?.[0]?.message?.content ?? '';
-    const parsed = robustJsonParse(raw);
-    if (!parsed) { console.warn('[editorial] OpenRouter: could not parse response JSON'); return null; }
+    const parsed = robustJsonParse(raw, 'DeepSeek');
+    if (!parsed) { console.warn('[editorial] DeepSeek: could not parse response JSON'); return null; }
     return parseSummaryResult(parsed);
   } catch (e) {
     console.warn('[editorial] OpenRouter call threw:', (e as Error).message.slice(0, 120));
@@ -239,7 +242,7 @@ async function callNemotron(prompt: string, apiKey: string): Promise<SummaryResu
       },
       body: JSON.stringify({
         model: NM_MODEL,
-        max_tokens: 2500,
+        max_tokens: 4096,
         temperature: 0.25,
         response_format: { type: 'json_object' },
         messages: [
@@ -260,7 +263,7 @@ async function callNemotron(prompt: string, apiKey: string): Promise<SummaryResu
 
     const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
     const raw = data.choices?.[0]?.message?.content ?? '';
-    const parsed = robustJsonParse(raw);
+    const parsed = robustJsonParse(raw, 'Nemotron');
     if (!parsed) { console.warn('[editorial] Nemotron: could not parse response JSON'); return null; }
     return parseSummaryResult(parsed);
   } catch (e) {
