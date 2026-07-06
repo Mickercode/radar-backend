@@ -5,6 +5,13 @@ import { asyncHandler } from '../lib/http';
 import { env } from '../config/env';
 import { signAuthToken } from '../lib/jwt';
 
+const BOOTSTRAP_ADMINS = new Set(
+  (process.env.ADMIN_EMAILS ?? '')
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean),
+);
+
 export const googleAuthRouter = Router();
 
 interface GoogleTokenPayload {
@@ -71,11 +78,12 @@ googleAuthRouter.post(
       }
     }
 
-    const token = signAuthToken(user.id, user.email);
+    const isAdmin = user.isAdmin || BOOTSTRAP_ADMINS.has(user.email.toLowerCase());
+    const token = signAuthToken(user.id, user.email, isAdmin);
 
     res.json({
       token,
-      user: { id: user.id, email: user.email, name: user.name },
+      user: { id: user.id, email: user.email, name: user.name, isAdmin },
       isNew,
     });
   }),

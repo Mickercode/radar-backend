@@ -10,10 +10,11 @@ const TOKEN_TTL = '7d';
 export interface AuthClaims {
   sub: string; // app_users.id
   email: string;
+  isAdmin: boolean;
 }
 
-export function signAuthToken(userId: string, email: string): string {
-  return jwt.sign({ sub: userId, email }, env.APP_JWT_SECRET, {
+export function signAuthToken(userId: string, email: string, isAdmin = false): string {
+  return jwt.sign({ sub: userId, email, isAdmin }, env.APP_JWT_SECRET, {
     expiresIn: TOKEN_TTL,
   });
 }
@@ -28,7 +29,11 @@ export function verifyAuthToken(token: string): AuthClaims {
       typeof decoded.sub === 'string' &&
       typeof (decoded as { email?: unknown }).email === 'string'
     ) {
-      return { sub: decoded.sub, email: (decoded as { email: string }).email };
+      return {
+        sub: decoded.sub,
+        email: (decoded as { email: string }).email,
+        isAdmin: !!(decoded as { isAdmin?: unknown }).isAdmin,
+      };
     }
     throw unauthorized('Malformed token');
   } catch (e) {

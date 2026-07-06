@@ -1,33 +1,39 @@
 import { Router } from 'express';
 import type { Request, Response, NextFunction } from 'express';
+import { z } from 'zod';
 import { prisma } from '../lib/prisma';
 import { asyncHandler, ApiError } from '../lib/http';
 import { requireAuth } from '../middleware/auth';
-import { env } from '../config/env';
 
 export const adminRouter = Router();
 
-// Parse ADMIN_EMAILS once at startup.
-const ADMIN_SET = new Set(
-  env.ADMIN_EMAILS.split(',')
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean),
-);
-
 function requireAdmin(req: Request, _res: Response, next: NextFunction): void {
-  const email = req.auth?.email ?? '';
-  if (!ADMIN_SET.has(email.toLowerCase())) {
+  if (!req.auth?.isAdmin) {
     next(new ApiError(403, 'Admin access required'));
     return;
   }
   next();
 }
 
-// GET /admin/me — debug: returns the email the server sees in the token + whether it's in ADMIN_EMAILS
+// GET /admin/me — returns the email + admin status the server sees in the token
 adminRouter.get('/admin/me', requireAuth, asyncHandler(async (req, res) => {
-  const email = req.auth?.email ?? '';
-  res.json({ email, isAdmin: ADMIN_SET.has(email.toLowerCase()), adminCount: ADMIN_SET.size });
+  res.json({ email: req.auth?.email ?? '', isAdmin: req.auth?.isAdmin ?? false });
 }));
+
+// POST /admin/grant-admin { email } → { ok, email }
+// Grants permanent DB-level admin to any existing user. Requires admin JWT.
+adminRouter.post(
+  '/admin/grant-admin',
+  requireAuth,
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const { email } = z.object({ email: z.string().trim().toLowerCase().email() }).parse(req.body);
+    const user = await prisma.appUser.findUnique({ where: { email } });
+    if (!user) throw new ApiError(404, `No account found for ${email}`);
+    await prisma.appUser.update({ where: { id: user.id }, data: { isAdmin: true } });
+    res.json({ ok: true, email });
+  }),
+);
 
 // GET /admin/stats → AdminStats
 adminRouter.get(

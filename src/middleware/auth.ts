@@ -14,7 +14,7 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction): v
   const token = extractBearer(req);
   if (!token) return next(unauthorized('Missing bearer token'));
   const claims = verifyAuthToken(token); // throws ApiError(401) on bad token
-  req.auth = { userId: claims.sub, email: claims.email };
+  req.auth = { userId: claims.sub, email: claims.email, isAdmin: claims.isAdmin };
   next();
 }
 

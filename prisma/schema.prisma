@@ -32,6 +32,7 @@ model AppUser {
   username     String?
   avatarUrl    String?  @map("avatar_url")
   isPremium    Boolean  @default(false) @map("is_premium")
+  isAdmin      Boolean  @default(false) @map("is_admin")
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 

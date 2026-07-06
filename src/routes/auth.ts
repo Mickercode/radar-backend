@@ -11,8 +11,21 @@ import crypto from 'crypto';
 
 export const authRouter = Router();
 
+// Bootstrap: emails listed here get isAdmin:true in their JWT even before the
+// DB flag is set — lets you do the first admin grant from outside the app.
+const BOOTSTRAP_ADMINS = new Set(
+  (process.env.ADMIN_EMAILS ?? '')
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean),
+);
+
 function publicUser(u: AppUser) {
-  return { id: u.id, email: u.email, name: u.name };
+  return { id: u.id, email: u.email, name: u.name, isAdmin: u.isAdmin };
+}
+
+function resolveIsAdmin(u: AppUser): boolean {
+  return u.isAdmin || BOOTSTRAP_ADMINS.has(u.email.toLowerCase());
 }
 
 function generateOtp(): string {
@@ -92,7 +105,7 @@ authRouter.post(
 
     await prisma.pendingSignup.delete({ where: { email } });
 
-    const token = signAuthToken(user.id, user.email);
+    const token = signAuthToken(user.id, user.email, resolveIsAdmin(user));
     sendWelcomeEmail(user.email, user.name);
 
     res.status(201).json({ token, user: publicUser(user) });
@@ -127,7 +140,7 @@ authRouter.post(
     if (!user) throw unauthorized(INVALID);
     const ok = await verifyPassword(password, user.passwordHash);
     if (!ok) throw unauthorized(INVALID);
-    const token = signAuthToken(user.id, user.email);
+    const token = signAuthToken(user.id, user.email, resolveIsAdmin(user));
     res.json({ token, user: publicUser(user) });
   }),
 );
