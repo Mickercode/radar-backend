@@ -6,7 +6,7 @@ const CLAUDE_ENDPOINT = 'https://api.anthropic.com/v1/messages';
 
 // Nemotron (NVIDIA) via OpenRouter — free tier, used for file/link analysis.
 // Check https://openrouter.ai/models for the latest Nemotron model ID.
-const NM_MODEL    = 'nvidia/llama-3.1-nemotron-70b-instruct:free';
+const NM_MODEL    = 'nvidia/llama-3.3-nemotron-super-49b-v1:free';
 const OR_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
 
 export interface ToolDefinition {
