@@ -19,9 +19,17 @@ export interface ExtractedContent {
 // truncating to 4000 chars to keep the LLM input tight without losing the lede.
 export async function fetchClean(url: string): Promise<ExtractedContent | null> {
   try {
-    const res = await fetch(`${JINA_READER_BASE}${url}`, {
-      headers: { Accept: 'text/plain', 'User-Agent': 'Radar/1.0' },
-    });
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 20_000);
+    let res: Response;
+    try {
+      res = await fetch(`${JINA_READER_BASE}${url}`, {
+        headers: { Accept: 'text/plain', 'User-Agent': 'Radar/1.0' },
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timer);
+    }
     if (!res.ok) {
       console.error('[jina] fetch failed:', res.status);
       return null;

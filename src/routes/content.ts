@@ -1,9 +1,8 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { asyncHandler, badRequest } from '../lib/http';
-import { requireAuth, userId } from '../middleware/auth';
+import { asyncHandler, badRequest, ApiError } from '../lib/http';
+import { requireAuth } from '../middleware/auth';
 import { generateJson } from '../lib/anthropic';
-import { ApiError } from '../lib/http';
 
 export const contentRouter = Router();
 contentRouter.use(requireAuth);
@@ -96,8 +95,6 @@ contentRouter.post(
   upload.single('file'),
   asyncHandler(async (req, res) => {
     if (!req.file) throw badRequest('No file uploaded');
-
-    void userId(req); // ensure authenticated
 
     let text: string;
     switch (req.file.mimetype) {
