@@ -189,8 +189,8 @@ async function fetchMediastack(params: Record<string, string>): Promise<Mediasta
   if (!apiKey) return [];
   const qs = new URLSearchParams({ access_key: apiKey, languages: 'en', limit: '100', sort: 'published_desc', ...params });
   try {
-    // Free-tier Mediastack is HTTP-only. Paid plans support HTTPS.
-    const res = await fetch(`https://api.mediastack.com/v1/news?${qs}`);
+    // Free-tier Mediastack requires plain HTTP. HTTPS is a paid-only feature.
+    const res = await fetch(`http://api.mediastack.com/v1/news?${qs}`);
     if (!res.ok) {
       console.warn(`[ingest] Mediastack ${res.status} for params`, params);
       return [];
@@ -209,8 +209,16 @@ async function ingestNewsFromMediastack(stats: Stats, budget: { left: number }) 
     return;
   }
 
+  // Free tier: 500 req/month. 2 calls × 4 runs/day × 31 days = 248/month (safe).
+  // Only run at 00:00, 06:00, 12:00, 18:00 UTC; skip all other hourly runs.
+  const utcHour = new Date().getUTCHours();
+  if (utcHour % 6 !== 0) {
+    console.log(`[ingest] Mediastack skipped (hour=${utcHour} UTC, only runs at 0/6/12/18)`);
+    return;
+  }
+
   const ngArticles = await fetchMediastack({ countries: 'ng', categories: 'general,business,technology,sports', limit: '25' });
-  await new Promise(r => setTimeout(r, 2000)); // avoid 429 on free-tier Mediastack
+  await new Promise(r => setTimeout(r, 2000));
   const africaArticles = await fetchMediastack({ countries: 'gh,ke,za,eg', categories: 'business,technology,general', limit: '25' });
 
   const all = [...ngArticles, ...africaArticles];
