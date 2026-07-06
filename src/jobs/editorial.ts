@@ -5,7 +5,7 @@ import { jsonrepair } from 'jsonrepair';
 const CLAUDE_MODEL    = 'claude-sonnet-4-6';
 const CLAUDE_ENDPOINT = 'https://api.anthropic.com/v1/messages';
 const OR_MODEL        = 'deepseek/deepseek-chat';
-const NM_MODEL        = 'nvidia/llama-3.3-nemotron-super-49b-v1:free';
+const NM_MODEL        = 'nvidia/nemotron-3-ultra-550b-a55b:free';
 const OR_ENDPOINT     = 'https://openrouter.ai/api/v1/chat/completions';
 
 // Claude throttle — ~13 RPM cap. Not applied to OpenRouter.

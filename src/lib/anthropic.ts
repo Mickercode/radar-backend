@@ -1,12 +1,12 @@
 import { env } from '../config/env';
 import { ApiError } from './http';
+import { jsonrepair } from 'jsonrepair';
 
 const CLAUDE_MODEL    = 'claude-sonnet-4-6';
 const CLAUDE_ENDPOINT = 'https://api.anthropic.com/v1/messages';
 
-// Nemotron (NVIDIA) via OpenRouter — free tier, used for file/link analysis.
-// Check https://openrouter.ai/models for the latest Nemotron model ID.
-const NM_MODEL    = 'nvidia/llama-3.3-nemotron-super-49b-v1:free';
+const NM_MODEL    = 'nvidia/nemotron-3-ultra-550b-a55b:free';
+const DS_MODEL    = 'deepseek/deepseek-chat';
 const OR_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
 
 export interface ToolDefinition {
@@ -20,16 +20,15 @@ interface GenerateOptions {
   maxOutputTokens?: number;
 }
 
-// ── OpenRouter fallback ───────────────────────────────────────────────────────
-// Uses the OpenAI chat-completions format with json_object response_format.
-// Called automatically when Claude fails (billing, rate-limit, etc.).
-async function generateJsonViaNemotron(
+// ── OpenRouter (Nemotron or DeepSeek) ────────────────────────────────────────
+async function generateJsonViaOpenRouter(
+  model: string,
   prompt: string,
   tool: ToolDefinition,
   opts: GenerateOptions,
 ): Promise<unknown> {
   const orKey = env.OPENROUTER_API_KEY;
-  if (!orKey) throw new ApiError(503, 'AI service is temporarily unavailable. Please try again later.');
+  if (!orKey) throw new Error('no-openrouter-key');
 
   const systemPrompt = `You are a precise JSON generator. ${tool.description ?? ''}
 Respond with ONLY a valid JSON object matching this schema:
@@ -45,7 +44,7 @@ No markdown, no code fences, no explanation — raw JSON only.`;
       'X-Title': 'Radar',
     },
     body: JSON.stringify({
-      model: NM_MODEL,
+      model,
       max_tokens: opts.maxOutputTokens ?? 1024,
       temperature: opts.temperature ?? 0.4,
       response_format: { type: 'json_object' },
@@ -58,7 +57,7 @@ No markdown, no code fences, no explanation — raw JSON only.`;
 
   if (!res.ok) {
     const errBody = await res.text().catch(() => '');
-    throw new ApiError(502, `OpenRouter generation failed (${res.status}): ${errBody}`);
+    throw new Error(`or-${res.status}: ${errBody}`);
   }
 
   const data = (await res.json()) as {
@@ -66,9 +65,9 @@ No markdown, no code fences, no explanation — raw JSON only.`;
   };
   const raw = data.choices?.[0]?.message?.content ?? '';
   try {
-    return JSON.parse(raw) as unknown;
+    return JSON.parse(jsonrepair(raw)) as unknown;
   } catch {
-    throw new ApiError(502, 'OpenRouter returned invalid JSON');
+    throw new Error('or-invalid-json');
   }
 }
 
@@ -118,24 +117,29 @@ async function generateJsonViaClaude(
 }
 
 /**
- * Generate structured JSON using OpenRouter/DeepSeek (primary) with automatic
- * fallback to Claude when OpenRouter is unavailable or the key is missing.
+ * Generate structured JSON. Priority: Nemotron (free) → DeepSeek (free) → Claude (last resort).
  */
 export async function generateJson(
   prompt: string,
   tool: ToolDefinition,
   opts: GenerateOptions = {},
 ): Promise<unknown> {
-  // Primary: Nemotron (NVIDIA) via OpenRouter — free tier, offloads DeepSeek
   if (env.OPENROUTER_API_KEY) {
+    // 1. Nemotron Ultra (free)
     try {
-      return await generateJsonViaNemotron(prompt, tool, opts);
+      return await generateJsonViaOpenRouter(NM_MODEL, prompt, tool, opts);
     } catch (nmErr) {
-      console.warn('[ai] Nemotron unavailable, falling back to Claude:', (nmErr as Error).message);
+      console.warn('[ai] Nemotron failed, trying DeepSeek:', (nmErr as Error).message);
+    }
+    // 2. DeepSeek (free)
+    try {
+      return await generateJsonViaOpenRouter(DS_MODEL, prompt, tool, opts);
+    } catch (dsErr) {
+      console.warn('[ai] DeepSeek failed, falling back to Claude:', (dsErr as Error).message);
     }
   }
 
-  // Fallback: Claude
+  // 3. Claude (last resort — paid)
   try {
     return await generateJsonViaClaude(prompt, tool, opts);
   } catch (claudeErr) {
