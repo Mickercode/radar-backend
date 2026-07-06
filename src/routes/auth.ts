@@ -21,7 +21,7 @@ const BOOTSTRAP_ADMINS = new Set(
 );
 
 function publicUser(u: AppUser) {
-  return { id: u.id, email: u.email, name: u.name, isAdmin: u.isAdmin };
+  return { id: u.id, email: u.email, name: u.name, isAdmin: resolveIsAdmin(u) };
 }
 
 function resolveIsAdmin(u: AppUser): boolean {
