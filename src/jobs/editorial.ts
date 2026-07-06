@@ -158,27 +158,38 @@ OUTPUT — strict JSON only: { "relevant", "what", "key_takeaways":[], "why", "h
 
 // ── JSON helpers ─────────────────────────────────────────────────────────────
 
+// Walk the text and extract the first balanced { ... } block regardless of preamble.
+function extractJsonObject(text: string): string | null {
+  let depth = 0, inString = false, escape = false, start = -1;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i]!;
+    if (escape)        { escape = false; continue; }
+    if (c === '\\' && inString) { escape = true; continue; }
+    if (c === '"')     { inString = !inString; continue; }
+    if (inString)      continue;
+    if (c === '{')     { if (depth++ === 0) start = i; }
+    else if (c === '}') { if (--depth === 0 && start !== -1) return text.slice(start, i + 1); }
+  }
+  return null;
+}
+
 function robustJsonParse(raw: string, label?: string): Record<string, unknown> | null {
   // Strip reasoning/thinking blocks emitted by reasoning models before the JSON
   let s = raw.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
   // Strip markdown code fences
-  s = s.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/m, '').trim();
+  s = s.replace(/^```(?:json)?\s*/im, '').replace(/\s*```\s*$/m, '').trim();
 
-  // Trim to outermost { ... } in case there's preamble/postamble text
-  const start = s.indexOf('{');
-  const end = s.lastIndexOf('}');
-  if (start !== -1 && end > start) s = s.slice(start, end + 1);
+  // Walk balanced braces to find the outermost JSON object
+  const extracted = extractJsonObject(s);
+  if (extracted) {
+    try { return JSON.parse(extracted) as Record<string, unknown>; } catch {}
+    try { return JSON.parse(jsonrepair(extracted)) as Record<string, unknown>; } catch {}
+  }
 
-  // Try direct parse
-  try { return JSON.parse(s) as Record<string, unknown>; } catch {}
+  // Last-resort: try the whole string
+  try { return JSON.parse(jsonrepair(s)) as Record<string, unknown>; } catch {}
 
-  // Attempt structural repair (handles missing commas, unescaped quotes, etc.)
-  try {
-    const repaired = jsonrepair(s);
-    return JSON.parse(repaired) as Record<string, unknown>;
-  } catch {}
-
-  if (label) console.warn(`[editorial] ${label} raw (first 300):`, raw.slice(0, 300));
+  if (label) console.warn(`[editorial] ${label} raw (first 400):`, raw.slice(0, 400));
   return null;
 }
 
@@ -368,15 +379,15 @@ export async function generateSummary(
 
   const prompt = buildPrompt(title, body, topic);
 
-  // Primary: Nemotron 3 Super (free via OpenRouter)
+  // Primary: DeepSeek (reliable free tier via OpenRouter)
   if (orKey) {
-    const result = await callNemotron(prompt, orKey);
+    const result = await callOpenRouter(prompt, orKey);
     if (result) { consecutiveFailures = 0; return result; }
   }
 
-  // Second: DeepSeek (free via OpenRouter)
+  // Second: Nemotron Ultra (free via OpenRouter, larger model)
   if (orKey) {
-    const result = await callOpenRouter(prompt, orKey);
+    const result = await callNemotron(prompt, orKey);
     if (result) { consecutiveFailures = 0; return result; }
   }
 
