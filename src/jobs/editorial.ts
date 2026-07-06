@@ -1,5 +1,5 @@
 // Editorial Quality Engine (PLAYBOOK §4A / §9) for the ingestion job.
-// Primary: OpenRouter/DeepSeek. Fallback: Claude. Third: Nemotron. Circuit-breaker on billing errors.
+// Priority: Nemotron (free) → DeepSeek (free) → Claude (paid, last resort). Circuit-breaker on billing errors.
 import { jsonrepair } from 'jsonrepair';
 
 const CLAUDE_MODEL    = 'claude-sonnet-4-6';
@@ -365,21 +365,21 @@ export async function generateSummary(
 
   const prompt = buildPrompt(title, body, topic);
 
-  // Primary: OpenRouter/DeepSeek
+  // Primary: Nemotron 3 Super (free via OpenRouter)
+  if (orKey) {
+    const result = await callNemotron(prompt, orKey);
+    if (result) { consecutiveFailures = 0; return result; }
+  }
+
+  // Second: DeepSeek (free via OpenRouter)
   if (orKey) {
     const result = await callOpenRouter(prompt, orKey);
     if (result) { consecutiveFailures = 0; return result; }
   }
 
-  // Fallback: Claude (skip if billing already failed this run)
+  // Last resort: Claude (paid — only when both free options fail)
   if (claudeKey && !claudeBillingFailed) {
     const result = await callClaude(prompt, claudeKey);
-    if (result) { consecutiveFailures = 0; return result; }
-  }
-
-  // Third option: Nemotron free tier
-  if (orKey) {
-    const result = await callNemotron(prompt, orKey);
     if (result) { consecutiveFailures = 0; return result; }
   }
 
