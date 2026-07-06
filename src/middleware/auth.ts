@@ -28,7 +28,7 @@ export function optionalAuth(req: Request, _res: Response, next: NextFunction): 
   if (!token) return next();
   try {
     const claims = verifyAuthToken(token);
-    req.auth = { userId: claims.sub, email: claims.email };
+    req.auth = { userId: claims.sub, email: claims.email, isAdmin: claims.isAdmin };
   } catch {
     // Ignore a bad/expired token on a public route — treat as anonymous.
   }
