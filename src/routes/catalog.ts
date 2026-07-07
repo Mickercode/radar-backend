@@ -69,7 +69,7 @@ catalogRouter.get(
     // If authenticated and no explicit interests, load from user prefs
     let effectiveInterests = interests;
     let effectiveCountry = toCountryCode(country);
-    const uid = (req as { userId?: string }).userId;
+    const uid = req.auth?.userId;
     if (uid && effectiveInterests.length === 0) {
       const prefs = await prisma.userPreferences.findUnique({ where: { userId: uid } });
       if (prefs) {
