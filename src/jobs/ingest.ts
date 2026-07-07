@@ -157,7 +157,7 @@ async function alreadyHave(source: string, title: string): Promise<boolean> {
 
 interface Stats {
   news: number; podcasts: number; clips: number;
-  skippedPromo: number; skippedDuration: number; skippedIrrelevant: number; skippedTier3: number;
+  skippedPromo: number; skippedDuration: number; skippedAge: number; skippedIrrelevant: number; skippedTier3: number;
 }
 
 // ── Mediastack news ───────────────────────────────────────────────────────────
@@ -361,7 +361,7 @@ async function ingestPodcasts(stats: Stats, budget: { left: number }) {
 
       if (item.isoDate) {
         const ageDays = (Date.now() - new Date(item.isoDate).getTime()) / 86_400_000;
-        if (ageDays > MAX_PODCAST_AGE_DAYS) { stats.skippedDuration++; continue; }
+        if (ageDays > MAX_PODCAST_AGE_DAYS) { stats.skippedAge++; continue; }
       }
 
       if (await alreadyHave(feed.source, title)) continue;
@@ -542,12 +542,22 @@ export async function runIngest() {
   } else {
     console.log(`[ingest] MEDIASTACK_API_KEY present ✓ (${msKey.slice(0, 4)}****)`);
   }
-  console.log(`[ingest] mode=${mode} sources — ${NEWS_FEEDS.length} news feeds, ${PODCAST_FEEDS.length} podcast feeds, ${YOUTUBE_CHANNELS.length} YouTube channels`);
-  console.log(`[ingest] targets — mediastack=${TARGET_MEDIASTACK} rss-news=${TARGET_NEWS} podcasts=${TARGET_PODCASTS} clips=${TARGET_CLIPS}`);
+  const activeSources = [
+    (mode === 'all' || mode === 'news') && `${NEWS_FEEDS.length} news feeds`,
+    (mode === 'all' || mode === 'podcasts') && `${PODCAST_FEEDS.length} podcast feeds`,
+    (mode === 'all' || mode === 'clips') && `${YOUTUBE_CHANNELS.length} YouTube channels`,
+  ].filter(Boolean).join(', ');
+  const activeTargets = [
+    (mode === 'all' || mode === 'news') && `mediastack=${TARGET_MEDIASTACK} rss-news=${TARGET_NEWS}`,
+    (mode === 'all' || mode === 'podcasts') && `podcasts=${TARGET_PODCASTS}`,
+    (mode === 'all' || mode === 'clips') && `clips=${TARGET_CLIPS}`,
+  ].filter(Boolean).join(' ');
+  console.log(`[ingest] mode=${mode} sources — ${activeSources}`);
+  console.log(`[ingest] targets — ${activeTargets}`);
 
   const stats: Stats = {
     news: 0, podcasts: 0, clips: 0,
-    skippedPromo: 0, skippedDuration: 0, skippedIrrelevant: 0, skippedTier3: 0,
+    skippedPromo: 0, skippedDuration: 0, skippedAge: 0, skippedIrrelevant: 0, skippedTier3: 0,
   };
 
   const runNews     = mode === 'all' || mode === 'news';
@@ -585,7 +595,7 @@ export async function runIngest() {
       status: aiStatus,
       runAt: new Date().toISOString(),
       inserted: { news: stats.news, podcasts: stats.podcasts, clips: stats.clips },
-      skipped: { promo: stats.skippedPromo, duration: stats.skippedDuration, irrelevant: stats.skippedIrrelevant, tier3: stats.skippedTier3 },
+      skipped: { promo: stats.skippedPromo, duration: stats.skippedDuration, age: stats.skippedAge, irrelevant: stats.skippedIrrelevant, tier3: stats.skippedTier3 },
     });
     await prisma.systemSetting.upsert({
       where:  { key: 'last_ingest' },
