@@ -35,6 +35,8 @@ const schema = z.object({
   // Comma-separated admin emails — e.g. "you@gmail.com,ops@radar.ng".
   // Users in this list can access GET /admin/stats.
   ADMIN_EMAILS: z.string().default(''),
+  // Shared secret for the POST /admin/ingest/run endpoint called by EventBridge.
+  INGEST_SECRET: z.string().optional(),
 });
 
 const parsed = schema.safeParse(process.env);

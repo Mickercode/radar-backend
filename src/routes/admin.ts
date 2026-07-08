@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import type { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
+import { spawn } from 'child_process';
+import path from 'path';
 import { prisma } from '../lib/prisma';
 import { asyncHandler, ApiError } from '../lib/http';
 import { requireAuth } from '../middleware/auth';
@@ -165,5 +167,30 @@ adminRouter.get(
         ingest: lastIngest ?? null,
       },
     });
+  }),
+);
+
+// POST /admin/ingest/run
+// Triggered by AWS EventBridge Scheduler on a cron schedule.
+// Auth: x-ingest-secret header must match INGEST_SECRET env var.
+// Returns 202 immediately; ingest runs as a detached child process.
+adminRouter.post(
+  '/admin/ingest/run',
+  asyncHandler(async (req, res) => {
+    const secret = process.env.INGEST_SECRET;
+    if (!secret) throw new ApiError(500, 'INGEST_SECRET is not configured on this service');
+    if (req.headers['x-ingest-secret'] !== secret) throw new ApiError(403, 'Invalid ingest secret');
+
+    // Resolve the compiled ingest entry point relative to this file's directory.
+    // In production: dist/routes/admin.js → dist/jobs/ingest.js
+    const ingestPath = path.join(__dirname, '..', 'jobs', 'ingest.js');
+    const child = spawn(process.execPath, [ingestPath], {
+      detached: true,
+      stdio: 'inherit',
+      env: process.env as NodeJS.ProcessEnv,
+    });
+    child.unref();
+
+    res.status(202).json({ ok: true, pid: child.pid });
   }),
 );
