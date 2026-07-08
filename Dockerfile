@@ -25,6 +25,9 @@ COPY prisma ./prisma/
 RUN npm ci
 RUN npx prisma generate
 
+# Alpine 3.17+ ships OpenSSL 3, not 1.1 — point Prisma at the correct engine after generate
+ENV PRISMA_QUERY_ENGINE_LIBRARY=/app/node_modules/.prisma/client/libquery_engine-linux-musl-openssl-3.0.x.so.node
+
 COPY --from=builder /app/dist ./dist/
 
 EXPOSE 3000
