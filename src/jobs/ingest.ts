@@ -104,12 +104,61 @@ const MOMENT_LABELS = [
   'Deep dive into details',
   'Conclusions and takeaways',
 ];
-function synthesizeMoments(duration: number) {
+
+// Generate podcast chapter markers. Uses OpenRouter (DeepSeek free) to extract
+// real topic titles from the episode description; falls back to generic labels
+// when the description is too short or the API call fails.
+async function generateMoments(
+  title: string,
+  description: string,
+  duration: number,
+): Promise<Array<{ timestampSec: number; label: string }>> {
   const count = Math.min(5, Math.max(3, Math.floor(duration / 600)));
-  return Array.from({ length: count }, (_, i) => ({
+  const fallback = Array.from({ length: count }, (_, i) => ({
     timestampSec: Math.round((duration / (count + 1)) * (i + 1)),
     label: MOMENT_LABELS[i] ?? `Segment ${i + 1}`,
   }));
+
+  const orKey = process.env.OPENROUTER_API_KEY;
+  const desc = description.replace(/<[^>]*>/g, '').trim();
+  if (!orKey || desc.length < 80) return fallback;
+
+  try {
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${orKey}`,
+        'HTTP-Referer': 'https://radarproapp.com',
+        'X-Title': 'Radar',
+      },
+      body: JSON.stringify({
+        model: 'deepseek/deepseek-chat',
+        max_tokens: 150,
+        temperature: 0.3,
+        messages: [
+          { role: 'system', content: 'Return ONLY a valid JSON array of strings. No markdown, no explanation.' },
+          {
+            role: 'user',
+            content: `Extract ${count} key discussion topics from this podcast episode. Return a JSON array of ${count} short topic titles (under 8 words each).\n\nTitle: ${title}\nDescription: ${desc.slice(0, 500)}`,
+          },
+        ],
+      }),
+    });
+    if (!res.ok) return fallback;
+    const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
+    const raw = (data.choices?.[0]?.message?.content ?? '').trim()
+      .replace(/^```(?:json)?\s*/im, '').replace(/\s*```\s*$/m, '').trim();
+    const labels = JSON.parse(raw) as unknown;
+    if (Array.isArray(labels) && labels.length >= 2) {
+      return labels.slice(0, count).map((l, i) => ({
+        timestampSec: Math.round((duration / (count + 1)) * (i + 1)),
+        label: String(l).trim().slice(0, 80) || (fallback[i]?.label ?? `Segment ${i + 1}`),
+      }));
+    }
+  } catch { /* fall through */ }
+
+  return fallback;
 }
 
 function summaryData(s: SummaryResult) {
@@ -395,7 +444,7 @@ async function ingestPodcasts(stats: Stats, budget: { left: number }) {
         if ((e as { code?: string }).code === 'P2002') continue;
         throw e;
       }
-      const moments = synthesizeMoments(duration).map((m) => ({ contentId: created.id, ...m }));
+      const moments = (await generateMoments(title ?? '', description, duration)).map((m) => ({ contentId: created.id, ...m }));
       if (moments.length) await prisma.keyMoment.createMany({ data: moments });
 
       stats.podcasts++; budget.left--;

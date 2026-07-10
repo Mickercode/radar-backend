@@ -20,6 +20,7 @@ import { captureRouter } from './routes/capture';
 import { notesRouter } from './routes/notes';
 import { adminRouter } from './routes/admin';
 import { clipsRouter } from './routes/clips';
+import { aiRouter } from './routes/ai';
 import { errorHandler, notFoundHandler } from './middleware/error';
 
 export function createApp() {
@@ -62,6 +63,7 @@ export function createApp() {
   app.use(captureRouter);
   app.use(adminRouter);
   app.use(clipsRouter);
+  app.use('/ai', aiRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
