@@ -176,7 +176,7 @@ interface MediastackArticle {
 // Mediastack category → our topic slug
 const MS_CATEGORY_TO_TOPIC: Record<string, string> = {
   general:       'politics',
-  business:      'economy',
+  business:      'finance',
   technology:    'tech',
   entertainment: 'music',
   health:        'health',
@@ -283,7 +283,13 @@ function shuffled<T>(arr: T[]): T[] {
 }
 
 async function ingestNews(stats: Stats, budget: { left: number }) {
-  for (const feed of shuffled(NEWS_FEEDS)) {
+  // Group by topic so every interest gets at least one feed processed before
+  // any topic gets a second. Shuffle within each group for per-run variety.
+  const byTopic: Record<string, typeof NEWS_FEEDS> = {};
+  for (const feed of NEWS_FEEDS) (byTopic[feed.topic] ??= []).push(feed);
+  const ordered = roundRobin(Object.values(byTopic).map(shuffled));
+
+  for (const feed of ordered) {
     if (budget.left <= 0) break;
     if (!aiIsHealthy()) { console.warn('[ingest] AI circuit open — stopping RSS news ingest early'); break; }
 
@@ -332,9 +338,13 @@ async function ingestNews(stats: Stats, budget: { left: number }) {
 // ── Podcasts ─────────────────────────────────────────────────────────────────
 
 async function ingestPodcasts(stats: Stats, budget: { left: number }) {
-  // Shuffle feeds so different shows surface on each 3-hour run without keeping
-  // all 36 parsed feeds in memory simultaneously (was causing OOM on free tier).
-  for (const feed of shuffled(PODCAST_FEEDS)) {
+  // Same topic-grouped round-robin as news: ensures every interest gets a
+  // podcast candidate before any topic gets a second slot.
+  const byTopic: Record<string, typeof PODCAST_FEEDS> = {};
+  for (const feed of PODCAST_FEEDS) (byTopic[feed.topic] ??= []).push(feed);
+  const ordered = roundRobin(Object.values(byTopic).map(shuffled));
+
+  for (const feed of ordered) {
     if (budget.left <= 0) break;
     if (!aiIsHealthy()) { console.warn('[ingest] AI circuit open — stopping podcast ingest early'); break; }
 

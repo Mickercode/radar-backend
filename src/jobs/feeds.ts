@@ -47,7 +47,7 @@ export const NEWS_FEEDS: NewsFeed[] = [
   // Telecompaper returns malformed XML
 
   // ── Business & Finance — Nigeria ─────────────────────────────────────────
-  { url: 'https://nairametrics.com/feed/',                  source: 'Nairametrics',           topic: 'economy'      },
+  { url: 'https://nairametrics.com/feed/',                  source: 'Nairametrics',           topic: 'finance'      },
   { url: 'https://businessday.ng/feed/',                    source: 'BusinessDay NG',         topic: 'finance'      },
   { url: 'https://www.thisdaylive.com/index.php/business/feed/', source: 'ThisDay Business', topic: 'finance'      },
   { url: 'https://leadership.ng/business/feed/',            source: 'Leadership Business',    topic: 'finance'      },
@@ -129,11 +129,23 @@ export const NEWS_FEEDS: NewsFeed[] = [
   // CultureTrip has no category-level RSS; GQ + Vogue covered via YouTube clips
   { url: 'https://rss.nytimes.com/services/xml/rss/nyt/Travel.xml', source: 'NY Times Travel',  topic: 'travel'    },
   { url: 'https://www.cntraveler.com/feed/rss',                 source: 'Condé Nast Traveler',   topic: 'travel'    },
+  { url: 'https://www.travelandleisure.com/rss/all.rss',        source: 'Travel + Leisure',       topic: 'travel'    },
+  { url: 'https://www.afar.com/feeds/latest',                   source: 'AFAR Magazine',          topic: 'travel'    },
   // Lonely Planet returns malformed XML
   { url: 'https://www.vogue.com/feed/rss',                      source: 'Vogue',                  topic: 'fashion'   },
 
+  // ── Travel — Nigeria ──────────────────────────────────────────────────────
+  { url: 'https://businessday.ng/travel-and-tourism/feed/',     source: 'BusinessDay Travel',     topic: 'travel'    },
+
   // ── Education — Nigeria ───────────────────────────────────────────────────
   { url: 'https://educeleb.com/feed/',                          source: 'EduCeleb',               topic: 'education'    },
+  { url: 'https://punchng.com/topics/education/feed/',          source: 'Punch Education',         topic: 'education'    },
+  { url: 'https://guardian.ng/category/news/education/feed/',   source: 'Guardian Education NG',   topic: 'education'    },
+  { url: 'https://www.vanguardngr.com/category/education/feed/', source: 'Vanguard Education',    topic: 'education'    },
+  { url: 'https://dailytrust.com/category/education/feed/',     source: 'Daily Trust Education',   topic: 'education'    },
+
+  // ── Education — Africa ────────────────────────────────────────────────────
+  { url: 'https://www.universityworldnews.com/rss.php',         source: 'University World News',   topic: 'education'    },
 
   // ── Education — International ─────────────────────────────────────────────
   { url: 'https://feeds.bbci.co.uk/news/education/rss.xml',    source: 'BBC Education',          topic: 'education'    },
@@ -219,11 +231,14 @@ export const NEWS_FEEDS: NewsFeed[] = [
 
   // ── Faith & Philosophy — Nigeria ─────────────────────────────────────────
   { url: 'https://muslimnews.com.ng/feed/',                        source: 'Muslim News Nigeria',     topic: 'faith'        },
+  { url: 'https://www.premiumtimesng.com/religion/feed/',          source: 'Premium Times Religion',  topic: 'faith'        },
+  { url: 'https://dailytrust.com/category/religion/feed/',         source: 'Daily Trust Religion',    topic: 'faith'        },
+  { url: 'https://guardian.ng/category/features/faith-and-reason/feed/', source: 'Guardian Faith NG', topic: 'faith'       },
+  // Vanguard Religion 403
 
   // ── Faith & Philosophy — Africa ───────────────────────────────────────────
   { url: 'https://theelephant.info/feed/',                         source: 'The Elephant',            topic: 'faith'        },
   { url: 'https://africasacountry.com/feed/',                      source: 'Africa Is A Country',     topic: 'faith'        },
-  // Vanguard Religion 403
 
   // ── Faith & Philosophy — International ────────────────────────────────────
   { url: 'https://aeon.co/feed.rss',                               source: 'Aeon',                    topic: 'faith'        },
@@ -235,6 +250,7 @@ export const NEWS_FEEDS: NewsFeed[] = [
   { url: 'https://www.completesports.com/feed/',            source: 'Complete Sports NG',     topic: 'sports'       },
   { url: 'https://soccernet.ng/feed/',                      source: 'Soccernet NG',           topic: 'sports'       },
   { url: 'https://brila.net/feed/',                         source: 'Brila',                  topic: 'sports'       },
+  { url: 'https://allnigeriasoccer.com/feed/',              source: 'All Nigeria Soccer',     topic: 'sports'       },
   // Punch NG Sports = duplicate punchng.com URL (already in politics) — removed to avoid timeout
   // Premium Times Sports returns malformed XML
 
@@ -284,7 +300,7 @@ export const PODCAST_FEEDS: NewsFeed[] = [
   // ── Business & Finance ───────────────────────────────────────────────────
   { url: 'https://feeds.npr.org/510289/podcast.xml',                        source: 'Planet Money',              topic: 'finance' },
   { url: 'https://www.omnycontent.com/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/8a94442e-5a74-4fa2-8b8d-ae27003a8d6b/982f5071-765c-403d-969d-ae27003a8d83/podcast.rss', source: 'Odd Lots', topic: 'finance' },
-  { url: 'https://feeds.npr.org/510313/podcast.xml',                        source: 'How I Built This',          topic: 'business'},
+  { url: 'https://feeds.npr.org/510313/podcast.xml',                        source: 'How I Built This',          topic: 'finance' },
 
   // ── Politics ─────────────────────────────────────────────────────────────
   { url: 'https://feeds.simplecast.com/54nAGcIl',                           source: 'The Daily',                 topic: 'politics'},
@@ -356,14 +372,14 @@ export interface YoutubeChannel {
 export const YOUTUBE_CHANNELS: YoutubeChannel[] = [
   // ── Verified global channels ──────────────────────────────────────────────
   { channelId: 'UCsBjURrPoezykLs9EqgamOA', source: 'Fireship',          topic: 'tech'      },
-  { channelId: 'UCIALMKvObZNtJ6AmdCLP7Lg', source: 'Bloomberg',         topic: 'economy'   },
+  { channelId: 'UCIALMKvObZNtJ6AmdCLP7Lg', source: 'Bloomberg',         topic: 'finance'   },
   { channelId: 'UCCjyq_K1Xwfg8Lndy7lKMpA', source: 'TechCrunch',       topic: 'tech'      },
   { channelId: 'UCJIfeSCssxSC_Dhc5s7woww', source: 'Lex Clips',         topic: 'tech'      },
   { channelId: 'UCSHZKyawb77ixDdsGog4iWA', source: 'Lex Fridman',       topic: 'science'   },
   { channelId: 'UCnUYZLuoy1rq1aVMwx4aTzw', source: 'GQ',                topic: 'fashion'   },
   { channelId: 'UCqZQlzSHbVJrwrn5XvzrzcA', source: 'ESPN FC',           topic: 'sports'    },
   { channelId: 'UCB_qr75-ydFVKSF9Dmo6izg', source: 'Al Jazeera Eng',   topic: 'politics'  },
-  { channelId: 'UCGq-a57w-aPwyi3pW7XLiHw', source: 'Diary of a CEO',    topic: 'business'  },
+  { channelId: 'UCGq-a57w-aPwyi3pW7XLiHw', source: 'Diary of a CEO',    topic: 'finance'   },
   // Acquired Podcast channelId UCHgySb9dOlMJuOSKBJoNwg returns 404 — need correct ID
   // ── Add Nigerian channel IDs below (get from youtube.com/@channel → About) ─
   // { channelId: 'PASTE_CHANNELS_TV_ID',   source: 'Channels TV',       topic: 'politics'  },
