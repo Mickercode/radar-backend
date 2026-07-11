@@ -8,6 +8,7 @@ import { asyncHandler, ApiError } from '../lib/http';
 import { requireAuth } from '../middleware/auth';
 import { runCoverageAudit } from '../jobs/coverageAudit';
 import { runGapFill } from '../jobs/gapFill';
+import { getListenNotesUsage } from '../lib/listennotes';
 
 export const adminRouter = Router();
 
@@ -169,6 +170,17 @@ adminRouter.get(
         ingest: lastIngest ?? null,
       },
     });
+  }),
+);
+
+// GET /admin/listennotes — returns monthly budget status
+adminRouter.get(
+  '/admin/listennotes',
+  requireAuth,
+  requireAdmin,
+  asyncHandler(async (_req, res) => {
+    const usage = await getListenNotesUsage();
+    res.json(usage);
   }),
 );
 

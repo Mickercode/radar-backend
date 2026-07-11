@@ -1,7 +1,8 @@
 // Gap-fill job.
 // Reads content_coverage rows with status 'gap' or 'sparse', then tries to
 // fetch missing content from targeted sources:
-//   - Podcasts: Podcast Index API search by topic keyword terms
+//   - Podcasts: ListenNotes API (primary, 300 req/month budget) with
+//               Podcast Index RSS fallback when budget runs low
 //   - News: targeted Mediastack category + keyword queries
 //   - Clips: logged but not auto-filled (YouTube search requires OAuth / paid API)
 //
@@ -14,7 +15,8 @@
 import { PrismaClient } from '@prisma/client';
 import Parser from 'rss-parser';
 import { generateSummary, aiIsHealthy } from './editorial';
-import { searchPodcasts, getEpisodes } from '../lib/podcast-index';
+import { searchPodcasts } from '../lib/podcast-index';
+import { searchEpisodes as listenNotesSearch, getListenNotesUsage } from '../lib/listennotes';
 import { isRelevant } from '../lib/relevanceFilter';
 import { TOPIC_SEARCH_TERMS, MIN_PODCAST_DURATION_SEC, MAX_PODCAST_DURATION_SEC, MAX_PODCAST_AGE_DAYS, PROMO_TITLE_PATTERNS } from './feeds';
 
@@ -81,13 +83,100 @@ async function alreadyExists(source: string, title: string): Promise<boolean> {
 }
 
 // ── Podcast gap-filler ────────────────────────────────────────────────────────
+// Strategy: ListenNotes (primary, higher quality) → Podcast Index RSS (fallback)
+// ListenNotes budget: 300 req/month, we switch to fallback when < 20 remaining.
 
-async function fillPodcastGap(topicSlug: string, budget: { left: number }): Promise<number> {
+const MIN_DURATION_SEC = MIN_PODCAST_DURATION_SEC;
+const MAX_DURATION_SEC = MAX_PODCAST_DURATION_SEC;
+
+async function fillPodcastGapViaListenNotes(topicSlug: string, budget: { left: number }): Promise<number> {
   const terms = TOPIC_SEARCH_TERMS[topicSlug];
-  if (!terms || terms.length === 0) {
-    console.log(`[gap-fill] no search terms configured for topic=${topicSlug} — skipping`);
+  if (!terms?.length) return 0;
+
+  const topicId = await getTopicId(topicSlug);
+  let filled = 0;
+
+  // Check budget before starting — switch to fallback if running low
+  let lnUsage;
+  try { lnUsage = await getListenNotesUsage(); }
+  catch { return 0; }
+
+  if (lnUsage.remaining < 5) {
+    console.log(`[gap-fill] ListenNotes budget nearly exhausted (${lnUsage.used}/${lnUsage.cap}) — skipping`);
     return 0;
   }
+
+  for (const term of terms.slice(0, 2)) { // max 2 search queries per topic (budget)
+    if (budget.left <= 0 || !aiIsHealthy()) break;
+
+    console.log(`[gap-fill] ListenNotes search: topic=${topicSlug} q="${term}"`);
+    let episodes;
+    try {
+      episodes = await listenNotesSearch(term, {
+        pageSize: 10,
+        minLenMin: Math.floor(MIN_DURATION_SEC / 60),
+        maxLenMin: Math.floor(MAX_DURATION_SEC / 60),
+      });
+    } catch (e) {
+      console.warn(`[gap-fill] ListenNotes error: ${(e as Error).message}`);
+      break;
+    }
+
+    for (const ep of episodes) {
+      if (budget.left <= 0 || !aiIsHealthy()) break;
+
+      const title = ep.title?.trim();
+      if (!title || looksLikePromo(title)) continue;
+
+      const duration = ep.total_length_sec ?? 0;
+      if (duration < MIN_DURATION_SEC || duration > MAX_DURATION_SEC) continue;
+
+      const ageDays = (Date.now() - ep.pub_date_ms) / 86_400_000;
+      if (ageDays > MAX_PODCAST_AGE_DAYS) continue;
+
+      if (!ep.audio) continue;
+      if (await alreadyExists(ep.podcast.title, title)) continue;
+
+      const description = ep.description ?? '';
+      if (!isRelevant(`${title} ${description}`, topicSlug)) {
+        console.log(`[gap-fill] relevance pre-filter dropped: "${title.slice(0, 60)}"`);
+        continue;
+      }
+
+      const s = await generateSummary(title, description, topicSlug);
+      if (!s.relevant || s.tier === 3) continue;
+
+      try {
+        await prisma.content.create({
+          data: {
+            type: 'podcast',
+            title,
+            source: ep.podcast.title,
+            duration,
+            thumbnailUrl: ep.thumbnail || ep.podcast.thumbnail || null,
+            audioUrl: ep.audio,
+            topicId,
+            summary: { create: summaryDataFrom(s) },
+          },
+        });
+        filled++;
+        budget.left--;
+        console.log(`[gap-fill] +1 podcast (LN) topic=${topicSlug} "${title.slice(0, 60)}"`);
+      } catch (e) {
+        if ((e as { code?: string }).code === 'P2002') continue;
+        throw e;
+      }
+
+      if (filled >= 3) break; // enough from this term
+    }
+  }
+
+  return filled;
+}
+
+async function fillPodcastGapViaRSS(topicSlug: string, budget: { left: number }): Promise<number> {
+  const terms = TOPIC_SEARCH_TERMS[topicSlug];
+  if (!terms?.length) return 0;
 
   let filled = 0;
   const topicId = await getTopicId(topicSlug);
@@ -95,11 +184,10 @@ async function fillPodcastGap(topicSlug: string, budget: { left: number }): Prom
   for (const term of terms) {
     if (budget.left <= 0 || !aiIsHealthy()) break;
 
-    console.log(`[gap-fill] podcast search: topic=${topicSlug} q="${term}"`);
+    console.log(`[gap-fill] Podcast Index search (fallback): topic=${topicSlug} q="${term}"`);
     const result = await searchPodcasts(term, 10).catch(() => ({ status: false, feeds: [], count: 0 }));
     if (!result.feeds.length) continue;
 
-    // Try up to 3 feeds per search term before moving on.
     for (const feed of result.feeds.slice(0, 3)) {
       if (budget.left <= 0 || !aiIsHealthy()) break;
       if (!feed.url) continue;
@@ -109,7 +197,7 @@ async function fillPodcastGap(topicSlug: string, budget: { left: number }): Prom
         const parsed = await parser.parseURL(feed.url);
         episodes = (parsed.items ?? []).slice(0, 3) as FeedEpisode[];
       } catch (e) {
-        console.warn(`[gap-fill] rss parse failed for feed ${feed.title}:`, (e as Error).message);
+        console.warn(`[gap-fill] rss parse failed for ${feed.title}:`, (e as Error).message);
         continue;
       }
 
@@ -120,7 +208,7 @@ async function fillPodcastGap(topicSlug: string, budget: { left: number }): Prom
         if (!title || looksLikePromo(title)) continue;
 
         const duration = parseItunesDuration(ep.itunes?.duration) ?? 1800;
-        if (duration < MIN_PODCAST_DURATION_SEC || duration > MAX_PODCAST_DURATION_SEC) continue;
+        if (duration < MIN_DURATION_SEC || duration > MAX_DURATION_SEC) continue;
 
         if (ep.isoDate) {
           const ageDays = (Date.now() - new Date(ep.isoDate).getTime()) / 86_400_000;
@@ -129,16 +217,10 @@ async function fillPodcastGap(topicSlug: string, budget: { left: number }): Prom
 
         const audioUrl = ep.enclosure?.url;
         if (!audioUrl) continue;
-
         if (await alreadyExists(feed.title, title)) continue;
 
         const description = descriptionOf(ep);
-
-        // Quick relevance pre-filter — saves AI credits on obvious mismatches.
-        if (!isRelevant(`${title} ${description}`, topicSlug)) {
-          console.log(`[gap-fill] relevance pre-filter dropped: "${title.slice(0, 60)}"`);
-          continue;
-        }
+        if (!isRelevant(`${title} ${description}`, topicSlug)) continue;
 
         const s = await generateSummary(title, description, topicSlug);
         if (!s.relevant || s.tier === 3) continue;
@@ -158,20 +240,38 @@ async function fillPodcastGap(topicSlug: string, budget: { left: number }): Prom
           });
           filled++;
           budget.left--;
-          console.log(`[gap-fill] +1 podcast topic=${topicSlug} "${title.slice(0, 60)}"`);
+          console.log(`[gap-fill] +1 podcast (RSS) topic=${topicSlug} "${title.slice(0, 60)}"`);
         } catch (e) {
           if ((e as { code?: string }).code === 'P2002') continue;
           throw e;
         }
       }
 
-      if (filled > 0) break; // got at least one from this feed — move on
+      if (filled > 0) break;
     }
 
-    if (filled >= 3) break; // enough from this search term
+    if (filled >= 3) break;
   }
 
   return filled;
+}
+
+async function fillPodcastGap(topicSlug: string, budget: { left: number }): Promise<number> {
+  const terms = TOPIC_SEARCH_TERMS[topicSlug];
+  if (!terms || terms.length === 0) {
+    console.log(`[gap-fill] no search terms configured for topic=${topicSlug} — skipping`);
+    return 0;
+  }
+
+  // Try ListenNotes first (better quality + direct MP3 links)
+  if (process.env.LISTENNOTES_API_KEY) {
+    const filled = await fillPodcastGapViaListenNotes(topicSlug, budget);
+    if (filled > 0) return filled;
+    // If LN returned 0 (e.g. budget nearly gone or no results), fall through to RSS
+  }
+
+  // Fallback: Podcast Index + RSS parsing
+  return fillPodcastGapViaRSS(topicSlug, budget);
 }
 
 // ── News gap-filler (Mediastack targeted query) ───────────────────────────────
