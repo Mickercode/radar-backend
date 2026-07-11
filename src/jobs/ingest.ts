@@ -19,6 +19,8 @@ import {
   YOUTUBE_CHANNELS,
 } from './feeds';
 import { generateSummary, aiIsHealthy, getAiStatus, type SummaryResult } from './editorial';
+import { searchEpisodes as listenNotesSearch, getListenNotesUsage } from '../lib/listennotes';
+import { TOPIC_SEARCH_TERMS } from './feeds';
 import { sendIngestDigest } from '../lib/email';
 
 // Radar ingestion worker. Pulls RSS (news + podcasts) + YouTube clips, scores
@@ -386,12 +388,42 @@ async function ingestNews(stats: Stats, budget: { left: number }) {
 
 // ── Podcasts ─────────────────────────────────────────────────────────────────
 
+async function savePodcastEpisode(
+  title: string, source: string, description: string, topic: string, topicId: string,
+  duration: number, thumbnailUrl: string | null, audioUrl: string | null,
+  stats: Stats, budget: { left: number },
+): Promise<boolean> {
+  const s = await generateSummary(title, description, topic);
+  if (!s.relevant) { stats.skippedIrrelevant++; return false; }
+  if (s.tier === 3) { stats.skippedTier3++; return false; }
+
+  let created: { id: string };
+  try {
+    created = await prisma.content.create({
+      data: { type: 'podcast', title, source, duration, thumbnailUrl, audioUrl, topicId, summary: { create: summaryData(s) } },
+      select: { id: true },
+    });
+  } catch (e) {
+    if ((e as { code?: string }).code === 'P2002') return false;
+    throw e;
+  }
+
+  const moments = (await generateMoments(title, description, duration)).map((m) => ({ contentId: created.id, ...m }));
+  if (moments.length) await prisma.keyMoment.createMany({ data: moments });
+
+  stats.podcasts++; budget.left--;
+  return true;
+}
+
 async function ingestPodcasts(stats: Stats, budget: { left: number }) {
   // Same topic-grouped round-robin as news: ensures every interest gets a
   // podcast candidate before any topic gets a second slot.
   const byTopic: Record<string, typeof PODCAST_FEEDS> = {};
   for (const feed of PODCAST_FEEDS) (byTopic[feed.topic] ??= []).push(feed);
   const ordered = roundRobin(Object.values(byTopic).map(shuffled));
+
+  // Track which topics produced 0 episodes from RSS — ListenNotes will top those up
+  const topicHits: Record<string, number> = {};
 
   for (const feed of ordered) {
     if (budget.left <= 0) break;
@@ -426,28 +458,73 @@ async function ingestPodcasts(stats: Stats, budget: { left: number }) {
       if (await alreadyHave(feed.source, title)) continue;
 
       const description = descriptionOf(item);
-      const s = await generateSummary(title, description, feed.topic);
-      if (!s.relevant) { stats.skippedIrrelevant++; continue; }
-      if (s.tier === 3) { stats.skippedTier3++; continue; }
+      const added = await savePodcastEpisode(
+        title, feed.source, description, feed.topic, topicId,
+        duration, imageOf(item), item.enclosure?.url ?? null, stats, budget,
+      );
+      if (added) topicHits[feed.topic] = (topicHits[feed.topic] ?? 0) + 1;
+    }
+  }
 
-      let created: { id: string };
-      try {
-        created = await prisma.content.create({
-          data: {
-            type: 'podcast', title, source: feed.source, duration,
-            thumbnailUrl: imageOf(item), audioUrl: item.enclosure?.url ?? null,
-            topicId, summary: { create: summaryData(s) },
-          },
-          select: { id: true },
-        });
-      } catch (e) {
-        if ((e as { code?: string }).code === 'P2002') continue;
-        throw e;
-      }
-      const moments = (await generateMoments(title ?? '', description, duration)).map((m) => ({ contentId: created.id, ...m }));
-      if (moments.length) await prisma.keyMoment.createMany({ data: moments });
+  // ── ListenNotes top-up: fill topics where RSS yielded nothing ──────────────
+  // Both this ingest run and the gap-fill job share the same monthly counter.
+  // We only consume LN budget here when it's clearly worth it (dry topic, budget OK).
+  if (!process.env.LISTENNOTES_API_KEY) return;
 
-      stats.podcasts++; budget.left--;
+  let lnUsage;
+  try { lnUsage = await getListenNotesUsage(); }
+  catch { return; }
+
+  // Reserve at least 10 requests for gap-fill; skip top-up if we're tight
+  if (lnUsage.remaining < 10) {
+    console.log(`[ingest] ListenNotes budget low (${lnUsage.used}/${lnUsage.cap}) — skipping podcast top-up`);
+    return;
+  }
+
+  const dryTopics = Object.keys(byTopic).filter(slug => !topicHits[slug]);
+  if (dryTopics.length === 0) return;
+
+  console.log(`[ingest] ListenNotes top-up for ${dryTopics.length} dry topics (budget: ${lnUsage.remaining} remaining)`);
+
+  for (const slug of dryTopics) {
+    if (budget.left <= 0 || !aiIsHealthy()) break;
+    // Re-check budget before each LN call (gap-fill may have run concurrently)
+    const usage = await getListenNotesUsage().catch(() => null);
+    if (!usage || usage.remaining < 5) break;
+
+    const terms = TOPIC_SEARCH_TERMS[slug];
+    if (!terms?.length) continue;
+
+    console.log(`[ingest] ListenNotes top-up: topic=${slug} q="${terms[0]}"`);
+    let episodes;
+    try {
+      episodes = await listenNotesSearch(terms[0]!, {
+        pageSize: 5,
+        minLenMin: Math.floor(MIN_PODCAST_DURATION_SEC / 60),
+        maxLenMin: Math.floor(MAX_PODCAST_DURATION_SEC / 60),
+      });
+    } catch (e) {
+      console.warn(`[ingest] ListenNotes top-up error for ${slug}:`, (e as Error).message);
+      continue;
+    }
+
+    const topicId = await getTopicId(slug);
+    for (const ep of episodes.slice(0, 2)) { // max 2 per dry topic
+      if (budget.left <= 0 || !aiIsHealthy()) break;
+      const title = ep.title?.trim();
+      if (!title || looksLikePromo(title)) continue;
+
+      const ageDays = (Date.now() - ep.pub_date_ms) / 86_400_000;
+      if (ageDays > MAX_PODCAST_AGE_DAYS || !ep.audio) continue;
+      if (await alreadyHave(ep.podcast.title, title)) continue;
+
+      await savePodcastEpisode(
+        title, ep.podcast.title, ep.description ?? '', slug, topicId,
+        ep.total_length_sec ?? 1800,
+        ep.thumbnail || ep.podcast.thumbnail || null,
+        ep.audio,
+        stats, budget,
+      );
     }
   }
 }
