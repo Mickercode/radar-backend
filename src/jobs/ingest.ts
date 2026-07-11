@@ -225,7 +225,7 @@ interface MediastackArticle {
 // Mediastack category → our topic slug
 const MS_CATEGORY_TO_TOPIC: Record<string, string> = {
   general:       'politics',
-  business:      'finance',
+  business:      'business',
   technology:    'tech',
   entertainment: 'music',
   health:        'health',

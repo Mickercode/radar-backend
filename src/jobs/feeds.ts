@@ -77,6 +77,23 @@ export const NEWS_FEEDS: NewsFeed[] = [
   // ── Finance > Insurance sub-feed (keywords: insurance, pension, naicom, pencom) ─
   { url: 'https://nairametrics.com/category/insurance/feed/', source: 'Nairametrics Insurance', topic: 'finance'   },
 
+  // ── Business — Nigeria ────────────────────────────────────────────────────
+  // (finance = financial markets/instruments; business = companies/entrepreneurship/trade)
+  { url: 'https://thenationonlineng.net/category/business-economy/feed/', source: 'The Nation Business',    topic: 'business' },
+  { url: 'https://guardian.ng/category/news/business-services/feed/',     source: 'Guardian Business NG',   topic: 'business' },
+  { url: 'https://www.vanguardngr.com/category/business/feed/',           source: 'Vanguard Business NG',   topic: 'business' },
+
+  // ── Business — Africa ─────────────────────────────────────────────────────
+  { url: 'https://african.business/feed/',                                 source: 'African Business',       topic: 'business' },
+  { url: 'https://africa.businessinsider.com/feed/',                       source: 'Business Insider Africa',topic: 'business' },
+
+  // ── Business — International ──────────────────────────────────────────────
+  { url: 'https://hbr.org/stories/feed',                                   source: 'Harvard Business Review',topic: 'business' },
+  { url: 'https://www.entrepreneur.com/latest.rss',                        source: 'Entrepreneur',           topic: 'business' },
+  { url: 'https://www.inc.com/rss',                                        source: 'Inc. Magazine',          topic: 'business' },
+  { url: 'https://www.fastcompany.com/latest/rss',                         source: 'Fast Company',           topic: 'business' },
+  { url: 'https://www.forbes.com/business/feed/',                          source: 'Forbes Business',        topic: 'business' },
+
   // ── Music / Film & TV — Nigeria ──────────────────────────────────────────
   { url: 'https://www.notjustok.com/feed/',                       source: 'NotJustOk',              topic: 'music'  },
   { url: 'https://www.bellanaija.com/music/feed/',                source: 'BellaNaija Music',       topic: 'music'  },
@@ -216,6 +233,11 @@ export const NEWS_FEEDS: NewsFeed[] = [
   { url: 'https://hechingerreport.org/feed/',                   source: 'The Hechinger Report',   topic: 'education'    },
   // Education Week malformed XML; Campus Technology 404
 
+  // ── EdTech news (keywords: edtech, online learning, e-learning) ───────────
+  { url: 'https://www.edtechmagazine.com/k12/rss.xml',    source: 'EdTech Magazine',    topic: 'education'    },
+  { url: 'https://www.eschoolnews.com/feed/',              source: 'eSchool News',       topic: 'education'    },
+  { url: 'https://edsurge.com/news.rss',                   source: 'EdSurge News',       topic: 'education'    },
+
   // ── Climate — Nigeria ─────────────────────────────────────────────────────
   { url: 'https://www.environewsnigeria.com/feed/',           source: 'EnviroNews Nigeria',      topic: 'climate'      },
   { url: 'https://ncfnigeria.org/blog/feed/',                 source: 'NCF Nigeria',             topic: 'climate'      },
@@ -340,30 +362,19 @@ export const NEWS_FEEDS: NewsFeed[] = [
 ];
 
 export const PODCAST_FEEDS: NewsFeed[] = [
-  // ── Climate ──────────────────────────────────────────────────────────────
-  { url: 'https://feeds.acast.com/public/shows/outrage-optimism',          source: 'Outrage + Optimism',        topic: 'climate' },
-  { url: 'https://feeds.simplecast.com/4T39_jAj',                           source: 'The Energy Gang',           topic: 'climate' },
-  { url: 'https://podcasts.files.bbci.co.uk/w13xtvb6.rss',                  source: 'The Climate Question',      topic: 'climate' },
-
-  // ── Health ───────────────────────────────────────────────────────────────
-  { url: 'https://podcasts.files.bbci.co.uk/p002vsyw.rss',                  source: 'Health Check',              topic: 'health'  },
-  { url: 'https://feeds.buzzsprout.com/861868.rss',                         source: 'The Lancet Voice',          topic: 'health'  },
-  { url: 'https://johnshopkinssph.libsyn.com/rss',                          source: 'Public Health On Call',     topic: 'health'  },
-
-  // ── Science ──────────────────────────────────────────────────────────────
-  { url: 'https://feeds.megaphone.fm/sciencevs',                            source: 'Science Vs',                topic: 'science' },
-  { url: 'https://rss.acast.com/nature',                                    source: 'Nature Podcast',            topic: 'science' },
-  { url: 'https://feeds.simplecast.com/h18ZIZD_',                           source: 'Science Friday',            topic: 'science' },
-
-  // ── Technology ───────────────────────────────────────────────────────────
-  { url: 'https://feeds.simplecast.com/6HKOhNgS',                           source: 'Hard Fork',                 topic: 'tech'    },
-  { url: 'https://feeds.megaphone.fm/vergecast',                            source: 'The Vergecast',             topic: 'tech'    },
-  { url: 'https://feeds.transistor.fm/acquired',                            source: 'Acquired',                  topic: 'tech'    },
-
   // ── Business & Finance ───────────────────────────────────────────────────
   { url: 'https://feeds.npr.org/510289/podcast.xml',                        source: 'Planet Money',              topic: 'finance' },
   { url: 'https://www.omnycontent.com/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/8a94442e-5a74-4fa2-8b8d-ae27003a8d6b/982f5071-765c-403d-969d-ae27003a8d83/podcast.rss', source: 'Odd Lots', topic: 'finance' },
-  { url: 'https://feeds.npr.org/510313/podcast.xml',                        source: 'How I Built This',          topic: 'finance' },
+
+  // ── Business ─────────────────────────────────────────────────────────────
+  { url: 'https://feeds.npr.org/510313/podcast.xml',                        source: 'How I Built This',          topic: 'business' },
+  { url: 'https://feeds.acast.com/public/shows/the-diary-of-a-ceo-with-steven-bartlett', source: 'Diary of a CEO', topic: 'business' },
+  { url: 'https://rss.art19.com/masters-of-scale',                          source: 'Masters of Scale',          topic: 'business' },
+  { url: 'https://rss.art19.com/tim-ferriss-show',                          source: 'The Tim Ferriss Show',      topic: 'business' },
+  { url: 'https://feeds.megaphone.fm/businesswars',                         source: 'Business Wars',             topic: 'business' },
+  { url: 'https://feeds.megaphone.fm/founders',                             source: 'Founders',                  topic: 'business' },
+  { url: 'https://feeds.npr.org/510325/podcast.xml',                        source: 'The Indicator',             topic: 'business' },
+  { url: 'https://feeds.megaphone.fm/freakonomicsradio',                    source: 'Freakonomics Radio',        topic: 'business' },
 
   // ── Politics ─────────────────────────────────────────────────────────────
   { url: 'https://feeds.simplecast.com/54nAGcIl',                           source: 'The Daily',                 topic: 'politics'},
@@ -374,12 +385,24 @@ export const PODCAST_FEEDS: NewsFeed[] = [
   { url: 'https://podcasts.files.bbci.co.uk/p02nrsln.rss',                  source: 'Football Daily',            topic: 'sports'  },
   { url: 'https://feeds.acast.com/public/shows/the-athletic-fc-podcast',    source: 'The Athletic FC Podcast',   topic: 'sports'  },
   { url: 'https://rss.art19.com/men-in-blazers',                            source: 'Men in Blazers',            topic: 'sports'  },
+  { url: 'https://rss.acast.com/footballramble',                             source: 'The Football Ramble',       topic: 'sports'  },
+  { url: 'https://feeds.megaphone.fm/theringernba',                          source: 'The Ringer NBA Show',       topic: 'sports'  },
+  { url: 'https://feeds.megaphone.fm/30for30',                               source: '30 for 30 Podcasts',        topic: 'sports'  },
 
   // ── Music ────────────────────────────────────────────────────────────────
   { url: 'https://afrobeatsintelligence.substack.com/feed',                 source: 'Afrobeats Intelligence',    topic: 'music'   },
   // Song Exploder RSS 404 (Spotify acquisition broke public feed)
   { url: 'https://feeds.npr.org/510019/podcast.xml',                        source: 'All Songs Considered',      topic: 'music'   },
   { url: 'https://feeds.npr.org/510310/podcast.xml',                        source: 'Tiny Desk Concerts',        topic: 'music'   },
+
+  // ── Music > Hip-Hop sub-feed podcasts ─────────────────────────────────────
+  { url: 'https://rss.art19.com/drink-champs',                               source: 'Drink Champs',              topic: 'music'   },
+  { url: 'https://rss.art19.com/rap-radar',                                  source: 'Rap Radar',                 topic: 'music'   },
+  { url: 'https://feeds.megaphone.fm/trapital',                              source: 'Trapital',                  topic: 'music'   },
+
+  // ── Music > Gospel sub-feed podcasts ──────────────────────────────────────
+  { url: 'https://feeds.megaphone.fm/elevation-church',                      source: 'Elevation Church',          topic: 'music'   },
+  { url: 'https://feeds.feedburner.com/PastorRicksDailyHopeAudio',          source: 'Daily Hope (Rick Warren)',   topic: 'music'   },
 
   // ── Film & TV ────────────────────────────────────────────────────────────
   { url: 'https://feeds.megaphone.fm/thebigpicture',                        source: 'The Big Picture',           topic: 'film'    },
@@ -390,6 +413,10 @@ export const PODCAST_FEEDS: NewsFeed[] = [
   { url: 'https://feeds.buzzsprout.com/2265341.rss',                        source: 'The EdSurge Podcast',       topic: 'education'},
   // Future U (Buzzsprout 209864) 404
   { url: 'https://educationnext.org/feed/',                                  source: 'Education Next',            topic: 'education'},
+  { url: 'https://feeds.feedburner.com/TedTalksEducation',                  source: 'TED Talks Education',       topic: 'education'},
+  { url: 'https://feeds.feedburner.com/CultOfPedagogyPodcast',              source: 'Cult of Pedagogy',          topic: 'education'},
+  { url: 'https://theedtechpodcast.com/feed/',                               source: 'The EdTech Podcast',        topic: 'education'},
+  { url: 'https://feeds.megaphone.fm/hiddenbrain',                          source: 'Hidden Brain',              topic: 'education'},
 
   // ── Fashion, Travel & Lifestyle ───────────────────────────────────────────
   { url: 'https://podcasts.files.bbci.co.uk/p016tmt2.rss',                  source: 'BBC Travel Show',           topic: 'travel'  },
@@ -401,6 +428,41 @@ export const PODCAST_FEEDS: NewsFeed[] = [
   { url: 'https://philosophizethis.libsyn.com/rss',                         source: 'Philosophize This!',        topic: 'faith'   },
   // On Being Megaphone feed 404
   { url: 'https://partiallyexaminedlife.libsyn.com/rss', source: 'The Partially Examined Life', topic: 'faith' },
+  { url: 'https://bibleproject.com/podcast/feed/',                           source: 'The Bible Project',         topic: 'faith'   },
+  { url: 'https://feeds.feedburner.com/MuslimCentralAudio',                 source: 'Muslim Central',            topic: 'faith'   },
+  { url: 'https://feeds.charlesstanley.com/charlesstanley',                 source: 'In Touch Ministries',       topic: 'faith'   },
+
+  // ── Health ───────────────────────────────────────────────────────────────
+  { url: 'https://podcasts.files.bbci.co.uk/p002vsyw.rss',                  source: 'Health Check',              topic: 'health'  },
+  { url: 'https://feeds.buzzsprout.com/861868.rss',                         source: 'The Lancet Voice',          topic: 'health'  },
+  { url: 'https://johnshopkinssph.libsyn.com/rss',                          source: 'Public Health On Call',     topic: 'health'  },
+  { url: 'https://feeds.megaphone.fm/hubermanlab',                          source: 'Huberman Lab',              topic: 'health'  },
+  { url: 'https://feeds.acast.com/public/shows/zoe-science-and-nutrition',  source: 'ZOE Podcast',               topic: 'health'  },
+  { url: 'https://feeds.megaphone.fm/markhydoc',                            source: "The Doctor's Farmacy",      topic: 'health'  },
+  { url: 'https://feeds.buzzsprout.com/1367917.rss',                        source: 'Maintenance Phase',         topic: 'health'  },
+
+  // ── Science ──────────────────────────────────────────────────────────────
+  { url: 'https://feeds.megaphone.fm/sciencevs',                            source: 'Science Vs',                topic: 'science' },
+  { url: 'https://rss.acast.com/nature',                                    source: 'Nature Podcast',            topic: 'science' },
+  { url: 'https://feeds.simplecast.com/h18ZIZD_',                           source: 'Science Friday',            topic: 'science' },
+  { url: 'https://feeds.simplecast.com/DOQ95FoN',                           source: 'Radiolab',                  topic: 'science' },
+  { url: 'https://rss.art19.com/startalk',                                  source: 'StarTalk Radio',            topic: 'science' },
+  { url: 'https://feeds.simplecast.com/45RW6ccy',                           source: 'Ologies',                   topic: 'science' },
+  { url: 'https://feeds.megaphone.fm/unexplainable',                        source: 'Unexplainable',             topic: 'science' },
+  { url: 'https://astronomycast.libsyn.com/rss',                            source: 'Astronomy Cast',            topic: 'science' },
+
+  // ── Climate ──────────────────────────────────────────────────────────────
+  { url: 'https://feeds.acast.com/public/shows/outrage-optimism',           source: 'Outrage + Optimism',        topic: 'climate' },
+  { url: 'https://feeds.simplecast.com/4T39_jAj',                           source: 'The Energy Gang',           topic: 'climate' },
+  { url: 'https://podcasts.files.bbci.co.uk/w13xtvb6.rss',                  source: 'The Climate Question',      topic: 'climate' },
+  { url: 'https://feeds.simplecast.com/VD7_9oBq',                           source: 'How to Save a Planet',      topic: 'climate' },
+  { url: 'https://www.volts.wtf/podcast.rss',                               source: 'Volts',                     topic: 'climate' },
+  { url: 'https://feeds.transistor.fm/my-climate-journey',                  source: 'My Climate Journey',        topic: 'climate' },
+
+  // ── Technology ───────────────────────────────────────────────────────────
+  { url: 'https://feeds.simplecast.com/6HKOhNgS',                           source: 'Hard Fork',                 topic: 'tech'    },
+  { url: 'https://feeds.megaphone.fm/vergecast',                            source: 'The Vergecast',             topic: 'tech'    },
+  { url: 'https://feeds.transistor.fm/acquired',                            source: 'Acquired',                  topic: 'tech'    },
 
   // ── Tech > Security sub-feed podcasts ────────────────────────────────────
   { url: 'https://feeds.megaphone.fm/darknetdiaries',                        source: 'Darknet Diaries',           topic: 'tech'    },
@@ -411,18 +473,8 @@ export const PODCAST_FEEDS: NewsFeed[] = [
   { url: 'https://unchained.libsyn.com/rss',                                 source: 'Unchained',                 topic: 'finance' },
   // Unchained Crypto Simplecast 404 (duplicate removed)
 
-  // ── Science > Space sub-feed podcasts ────────────────────────────────────
-  // StarTalk Radio Simplecast 404
-  { url: 'https://astronomycast.libsyn.com/rss',                             source: 'Astronomy Cast',            topic: 'science' },
-
   // ── Sports > Basketball sub-feed podcasts ────────────────────────────────
   // Hoop Collective Megaphone 404
-
-  // ── Music > Hip-Hop sub-feed podcasts ────────────────────────────────────
-  // Drink Champs Simplecast 404
-
-  // ── Music > Gospel sub-feed podcasts ─────────────────────────────────────
-  // Elevation Church Simplecast 404
 ];
 
 export interface YoutubeChannel {
@@ -433,34 +485,72 @@ export interface YoutubeChannel {
 
 // Channel IDs: find them at youtube.com/@ChannelName → About → Share → Copy channel ID
 export const YOUTUBE_CHANNELS: YoutubeChannel[] = [
-  // ── Verified global channels ──────────────────────────────────────────────
-  { channelId: 'UCsBjURrPoezykLs9EqgamOA', source: 'Fireship',          topic: 'tech'      },
-  { channelId: 'UCIALMKvObZNtJ6AmdCLP7Lg', source: 'Bloomberg',         topic: 'finance'   },
-  { channelId: 'UCCjyq_K1Xwfg8Lndy7lKMpA', source: 'TechCrunch',       topic: 'tech'      },
-  { channelId: 'UCJIfeSCssxSC_Dhc5s7woww', source: 'Lex Clips',         topic: 'tech'      },
-  { channelId: 'UCSHZKyawb77ixDdsGog4iWA', source: 'Lex Fridman',       topic: 'science'   },
-  { channelId: 'UCnUYZLuoy1rq1aVMwx4aTzw', source: 'GQ',                topic: 'fashion'   },
-  { channelId: 'UCqZQlzSHbVJrwrn5XvzrzcA', source: 'ESPN FC',           topic: 'sports'    },
-  { channelId: 'UCB_qr75-ydFVKSF9Dmo6izg', source: 'Al Jazeera Eng',   topic: 'politics'  },
-  { channelId: 'UCGq-a57w-aPwyi3pW7XLiHw', source: 'Diary of a CEO',    topic: 'finance'   },
-  // Acquired Podcast channelId UCHgySb9dOlMJuOSKBJoNwg returns 404 — need correct ID
-  // ── Add Nigerian channel IDs below (get from youtube.com/@channel → About) ─
-  // { channelId: 'PASTE_CHANNELS_TV_ID',   source: 'Channels TV',       topic: 'politics'  },
-  // { channelId: 'PASTE_TVC_NEWS_ID',      source: 'TVC News',          topic: 'politics'  },
-  // { channelId: 'PASTE_NOTJUSTOK_ID',     source: 'NotJustOk TV',      topic: 'music'     },
-  // ── Needs channel ID verification before enabling ──────────────────────────
-  // { channelId: 'PASTE_CONVERSATION_AFRICA_ID', source: 'The Conversation Africa', topic: 'science'  },
-  // { channelId: 'PASTE_AFROPOLITAN_ID',         source: 'Afropolitan',             topic: 'business' },
-  // { channelId: 'PASTE_TECHPOINT_AFRICA_ID',    source: 'Techpoint Unscripted',    topic: 'tech'     },
+  // ── Tech ─────────────────────────────────────────────────────────────────
+  { channelId: 'UCsBjURrPoezykLs9EqgamOA', source: 'Fireship',           topic: 'tech'      },
+  { channelId: 'UCCjyq_K1Xwfg8Lndy7lKMpA', source: 'TechCrunch',        topic: 'tech'      },
+  { channelId: 'UCJIfeSCssxSC_Dhc5s7woww', source: 'Lex Clips',          topic: 'tech'      },
+  { channelId: 'UCBcRF18a7Qf58cCRy5xuWwQ', source: 'MKBHD',              topic: 'tech'      },
+  { channelId: 'UC6107grRI4m0o2-emgoDnAA', source: 'SmarterEveryDay',    topic: 'tech'      },
+  // { channelId: 'PASTE_TECHPOINT_AFRICA_ID', source: 'Techpoint Unscripted', topic: 'tech' },
+
+  // ── Business ─────────────────────────────────────────────────────────────
+  { channelId: 'UCvJJ_dzjViJCoLf5uKUTwoA', source: 'CNBC',               topic: 'business'  },
+  { channelId: 'UCHmE4FkFGV8ZaHJU_yjMhXg', source: 'Forbes',             topic: 'business'  },
+  // { channelId: 'PASTE_AFROPOLITAN_ID',   source: 'Afropolitan',         topic: 'business'  },
+
+  // ── Finance ───────────────────────────────────────────────────────────────
+  { channelId: 'UCIALMKvObZNtJ6AmdCLP7Lg', source: 'Bloomberg',          topic: 'finance'   },
+  { channelId: 'UCGq-a57w-aPwyi3pW7XLiHw', source: 'Diary of a CEO',     topic: 'finance'   },
+
+  // ── Science ───────────────────────────────────────────────────────────────
+  { channelId: 'UCSHZKyawb77ixDdsGog4iWA', source: 'Lex Fridman',        topic: 'science'   },
+  { channelId: 'UCsXVk37bltHxD1rDPwtNM8Q', source: 'Kurzgesagt',         topic: 'science'   },
+  { channelId: 'UCHnyfMqiRRG1u-2MsSQLbXA', source: 'Veritasium',         topic: 'science'   },
+  { channelId: 'UCLA_DiR1FfKNvjuUpBHmylQ', source: 'NASA',               topic: 'science'   },
+  { channelId: 'UCY1kMZp36IQSyNx_9h4mpCg', source: 'Mark Rober',         topic: 'science'   },
+
+  // ── Education ─────────────────────────────────────────────────────────────
+  { channelId: 'UCAuUUnT6oDeKwE6v1NGQxug', source: 'TED',                topic: 'education' },
+  { channelId: 'UCsooa4yRKGN_zEE8iknghZA', source: 'TED-Ed',             topic: 'education' },
+  { channelId: 'UCX6b17PVsYBQ0ip5gyeme-Q', source: 'Crash Course',       topic: 'education' },
+  { channelId: 'UC4a-Gbdw7vOaccHmFo40b9g', source: 'Khan Academy',       topic: 'education' },
+
+  // ── Sports ────────────────────────────────────────────────────────────────
+  { channelId: 'UCqZQlzSHbVJrwrn5XvzrzcA', source: 'ESPN FC',            topic: 'sports'    },
+  { channelId: 'UCWJ2lWNubArHWmf3FIHbfcQ', source: 'NBA',                topic: 'sports'    },
+
+  // ── Politics / News ────────────────────────────────────────────────────────
+  { channelId: 'UCB_qr75-ydFVKSF9Dmo6izg', source: 'Al Jazeera Eng',    topic: 'politics'  },
+  { channelId: 'UC16niRr50-MSBwiU3jmlApQ', source: 'BBC News',           topic: 'politics'  },
+  { channelId: 'UCknLrEdhRCp1aegoMqRaCZg', source: 'DW',                 topic: 'politics'  },
+  { channelId: 'UCupvZG-5ko_eiXAupbDfxWw', source: 'CNN',                topic: 'politics'  },
+  // { channelId: 'PASTE_CHANNELS_TV_ID',   source: 'Channels TV',        topic: 'politics'  },
+  // { channelId: 'PASTE_TVC_NEWS_ID',      source: 'TVC News',           topic: 'politics'  },
+
+  // ── Music ─────────────────────────────────────────────────────────────────
+  { channelId: 'UCX4tDd0VDIrTiZYqTSVWvAg', source: 'BET',               topic: 'music'     },
+  { channelId: 'UC4eYXhJI4-7wSWc8UNRwD4A', source: 'NPR Music',         topic: 'music'     },
+  // { channelId: 'PASTE_NOTJUSTOK_ID',     source: 'NotJustOk TV',       topic: 'music'     },
+
+  // ── Fashion ───────────────────────────────────────────────────────────────
+  { channelId: 'UCnUYZLuoy1rq1aVMwx4aTzw', source: 'GQ',                 topic: 'fashion'   },
+
+  // ── Health ────────────────────────────────────────────────────────────────
+  { channelId: 'UCrj-7x7UMRFCWd5H_c1i4Ug', source: 'Cleveland Clinic',  topic: 'health'    },
+  { channelId: 'UCKhPBDNJVqXFRTRg8lNwRuQ', source: 'WebMD',             topic: 'health'    },
+
+  // ── Climate ───────────────────────────────────────────────────────────────
+  { channelId: 'UCZelOtGCkHFr3iKDBE-7D8w', source: 'DW Planet A',       topic: 'climate'   },
+  // { channelId: 'PASTE_CONVERSATION_AFRICA_ID', source: 'The Conversation Africa', topic: 'science' },
 ];
 
 // Per-run targets — how many items of each type to publish per hourly ingest.
 // Mediastack and RSS each get their own budget so neither starves the other.
 // Dedup (alreadyHave) makes re-runs cheap: only genuinely new articles hit the AI.
 export const TARGET_MEDIASTACK = 20;  // Mediastack (Nigeria + Africa API)
-export const TARGET_NEWS       = 40;  // RSS news feeds (75+ sources, shuffled)
-export const TARGET_PODCASTS   = 40;  // Podcast feeds (39 sources, shuffled)
-export const TARGET_CLIPS      =  8;  // YouTube clips
+export const TARGET_NEWS       = 60;  // RSS news feeds (140+ sources, round-robin)
+export const TARGET_PODCASTS   = 50;  // Podcast feeds (60+ sources, shuffled)
+export const TARGET_CLIPS      = 12;  // YouTube clips
 
 // How many recent items to pull from each source as candidates per run.
 export const PER_NEWS_FEED       = 5;
