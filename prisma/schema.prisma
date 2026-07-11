@@ -427,6 +427,26 @@ model SystemSetting {
   @@map("system_settings")
 }
 
+// ── Content coverage audit ─────────────────────────────────────────────────────
+// Tracks how many items each topic+type pair has in the last 30 days.
+// Populated by jobs/coverageAudit.ts; read by the admin dashboard and gapFill.ts.
+
+model ContentCoverage {
+  topicSlug    String    @map("topic_slug")
+  contentType  String    @map("content_type") // 'news' | 'podcast' | 'clip'
+  itemCount    Int       @default(0) @map("item_count")
+  minThreshold Int       @default(5) @map("min_threshold")
+  lastChecked  DateTime? @map("last_checked") @db.Timestamptz(6)
+  // 'unknown' | 'ok' | 'sparse' | 'gap' | 'scarce'
+  // 'scarce' = gap/sparse for 5+ audit cycles — real supply shortage, not a bug.
+  status       String    @default("unknown")
+  failCycles   Int       @default(0) @map("fail_cycles")
+
+  @@id([topicSlug, contentType])
+  @@index([status])
+  @@map("content_coverage")
+}
+
 // ── Web Push Subscriptions ─────────────────────────────────────────────────────
 
 model PushSubscription {

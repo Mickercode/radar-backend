@@ -6,6 +6,8 @@ import path from 'path';
 import { prisma } from '../lib/prisma';
 import { asyncHandler, ApiError } from '../lib/http';
 import { requireAuth } from '../middleware/auth';
+import { runCoverageAudit } from '../jobs/coverageAudit';
+import { runGapFill } from '../jobs/gapFill';
 
 export const adminRouter = Router();
 
@@ -167,6 +169,57 @@ adminRouter.get(
         ingest: lastIngest ?? null,
       },
     });
+  }),
+);
+
+// GET /admin/coverage — returns full content_coverage table + last audit summary
+adminRouter.get(
+  '/admin/coverage',
+  requireAuth,
+  requireAdmin,
+  asyncHandler(async (_req, res) => {
+    const [rows, auditSetting, fillSetting] = await Promise.all([
+      prisma.contentCoverage.findMany({
+        orderBy: [{ status: 'asc' }, { topicSlug: 'asc' }, { contentType: 'asc' }],
+      }),
+      prisma.systemSetting.findUnique({ where: { key: 'last_coverage_audit' } }),
+      prisma.systemSetting.findUnique({ where: { key: 'last_gap_fill' } }),
+    ]);
+
+    res.json({
+      rows,
+      lastAudit: auditSetting ? JSON.parse(auditSetting.value) : null,
+      lastFill:  fillSetting  ? JSON.parse(fillSetting.value)  : null,
+    });
+  }),
+);
+
+// POST /admin/coverage/audit — runs the coverage audit in-process (fast, < 2s)
+adminRouter.post(
+  '/admin/coverage/audit',
+  requireAuth,
+  requireAdmin,
+  asyncHandler(async (_req, res) => {
+    const result = await runCoverageAudit();
+    res.json({ success: true, ...result });
+  }),
+);
+
+// POST /admin/coverage/fill — spawns gap-fill as a detached child process
+// (can take 1–5 minutes depending on AI budget; returns 202 immediately).
+adminRouter.post(
+  '/admin/coverage/fill',
+  requireAuth,
+  requireAdmin,
+  asyncHandler(async (_req, res) => {
+    const fillPath = path.join(__dirname, '..', 'jobs', 'gapFill.js');
+    const child = spawn(process.execPath, [fillPath], {
+      detached: true,
+      stdio: 'inherit',
+      env: process.env as NodeJS.ProcessEnv,
+    });
+    child.unref();
+    res.status(202).json({ ok: true, pid: child.pid });
   }),
 );
 

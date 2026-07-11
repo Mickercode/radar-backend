@@ -563,6 +563,46 @@ export const MIN_CLIP_DURATION_SEC    = 60;         // at least 1 minute
 export const MAX_CLIP_DURATION_SEC    = 3 * 60 * 60; // up to 3 hours (covers long-form YouTube)
 export const MAX_PODCAST_AGE_DAYS     = 30;        // 30-day backlog on first run
 
+// Coverage thresholds: how many items (last 30 days) constitute "ok" coverage
+// per topic+type. More demanding for news (high supply), lighter for clips (low supply).
+export const COVERAGE_THRESHOLDS: Record<string, { news: number; podcast: number; clip: number }> = {
+  tech:       { news: 10, podcast: 5, clip: 3 },
+  business:   { news: 10, podcast: 5, clip: 3 },
+  finance:    { news: 10, podcast: 5, clip: 3 },
+  economy:    { news: 10, podcast: 5, clip: 3 },
+  politics:   { news: 10, podcast: 5, clip: 3 },
+  science:    { news:  8, podcast: 5, clip: 3 },
+  health:     { news:  8, podcast: 5, clip: 3 },
+  climate:    { news:  8, podcast: 4, clip: 2 },
+  sports:     { news:  8, podcast: 5, clip: 3 },
+  music:      { news:  8, podcast: 5, clip: 3 },
+  film:       { news:  8, podcast: 4, clip: 3 },
+  education:  { news:  6, podcast: 4, clip: 3 },
+  fashion:    { news:  6, podcast: 3, clip: 2 },
+  travel:     { news:  5, podcast: 3, clip: 2 },
+  faith:      { news:  5, podcast: 4, clip: 2 },
+};
+
+// Search terms sent to Podcast Index when a topic has a podcast gap/sparse status.
+// Multiple terms let the fetcher try progressively broader queries.
+export const TOPIC_SEARCH_TERMS: Record<string, string[]> = {
+  tech:       ['technology Africa podcast', 'Nigeria tech startup podcast', 'African AI technology'],
+  business:   ['business entrepreneurship Nigeria', 'African business podcast', 'startup Africa'],
+  finance:    ['finance investment Nigeria', 'African economy money podcast', 'naira finance'],
+  economy:    ['Nigeria economy podcast', 'African development economics', 'macroeconomics Africa'],
+  politics:   ['Nigeria politics podcast', 'African current affairs', 'governance Africa'],
+  science:    ['science discovery Africa', 'STEM Nigeria podcast', 'research innovation Africa'],
+  health:     ['health wellness Africa', 'Nigeria health podcast', 'public health Africa'],
+  climate:    ['climate change Africa podcast', 'renewable energy Nigeria', 'environment Africa'],
+  sports:     ['Nigeria football sports podcast', 'African sports analysis', 'Super Eagles podcast'],
+  music:      ['gospel music podcast', 'Afrobeats industry podcast', 'African hip hop music'],
+  film:       ['Nollywood podcast', 'African cinema film podcast', 'Nigerian film industry'],
+  education:  ['education Nigeria podcast', 'EdTech Africa', 'African university learning podcast'],
+  fashion:    ['African fashion lifestyle podcast', 'Nigerian style beauty podcast'],
+  travel:     ['Africa travel adventure podcast', 'Nigerian travel tourism'],
+  faith:      ['Christianity Nigeria podcast', 'Islam Africa podcast', 'African faith spirituality'],
+};
+
 export const PROMO_TITLE_PATTERNS: RegExp[] = [
   /^\s*trailer\b/i,
   /\btrailer\s*[-:]/i,
