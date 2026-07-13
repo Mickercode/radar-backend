@@ -1,22 +1,11 @@
 // Editorial Quality Engine (PLAYBOOK §4A / §9) for the ingestion job.
-// Priority: Nemotron (free) → DeepSeek (free) → Claude (paid, last resort). Circuit-breaker on billing errors.
+// Provider selection is delegated to aiRouter — flat round-robin, no priority tiers.
 import { jsonrepair } from 'jsonrepair';
+import { callAI, getRouterStatus } from '../lib/aiRouter';
 
-const CLAUDE_MODEL    = 'claude-sonnet-4-6';
-const CLAUDE_ENDPOINT = 'https://api.anthropic.com/v1/messages';
-const OR_MODEL        = 'deepseek/deepseek-chat';
-const NM_MODEL        = 'nvidia/nemotron-3-ultra-550b-a55b:free';
-const OR_ENDPOINT     = 'https://openrouter.ai/api/v1/chat/completions';
-
-// Claude throttle — ~13 RPM cap. Not applied to OpenRouter.
-const MIN_CLAUDE_GAP_MS = 4500;
-let lastClaudeCallAt = 0;
-
-// Circuit breaker: once billing fails, skip Claude for the rest of this process run.
-let claudeBillingFailed = false;
-// Consecutive AI failures — if both providers fail repeatedly, abort early.
+// Consecutive AI failures — abort ingest early if all providers are down.
 let consecutiveFailures = 0;
-const MAX_CONSECUTIVE_FAILURES = 5;
+const MAX_CONSECUTIVE_FAILURES = 15;
 
 export function aiIsHealthy(): boolean {
   return consecutiveFailures < MAX_CONSECUTIVE_FAILURES;
@@ -24,17 +13,13 @@ export function aiIsHealthy(): boolean {
 
 export function getAiStatus(): 'ok' | 'claude_credits_low' | 'ai_unavailable' {
   if (!aiIsHealthy()) return 'ai_unavailable';
-  if (claudeBillingFailed) return 'claude_credits_low';
+  const { available } = getRouterStatus();
+  if (available.length === 0) return 'ai_unavailable';
   return 'ok';
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-async function throttleClaude() {
-  const elapsed = Date.now() - lastClaudeCallAt;
-  if (elapsed < MIN_CLAUDE_GAP_MS) await sleep(MIN_CLAUDE_GAP_MS - elapsed);
-  lastClaudeCallAt = Date.now();
-}
+void sleep; // used by robustJsonParse retry paths if re-added later
 
 export interface SummaryResult {
   relevant: boolean;
@@ -156,7 +141,7 @@ TIER:
 OUTPUT — strict JSON only: { "relevant", "what", "key_takeaways":[], "why", "how_it_matters_to_you", "glossary":[], "forwardable", "advantage", "non_obvious", "learnable", "nigeria_relevance", "tier" }`;
 }
 
-// ── JSON helpers ─────────────────────────────────────────────────────────────
+// ── JSON helpers ──────────────────────────────────────────────────────────────
 
 // Walk the text and extract the first balanced { ... } block regardless of preamble.
 function extractJsonObject(text: string): string | null {
@@ -193,174 +178,6 @@ function robustJsonParse(raw: string, label?: string): Record<string, unknown> |
   return null;
 }
 
-// ── OpenRouter / DeepSeek ─────────────────────────────────────────────────────
-
-async function callOpenRouter(prompt: string, apiKey: string): Promise<SummaryResult | null> {
-  try {
-    const res = await fetch(OR_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-        'HTTP-Referer': 'https://radarproapp.com',
-        'X-Title': 'Radar',
-      },
-      body: JSON.stringify({
-        model: OR_MODEL,
-        max_tokens: 2500,
-        temperature: 0.25,
-        response_format: { type: 'json_object' },
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a precise JSON generator. Respond with ONLY a valid JSON object. No markdown, no code fences, no explanation — raw JSON only.',
-          },
-          { role: 'user', content: prompt },
-        ],
-      }),
-    });
-
-    if (!res.ok) {
-      const errBody = (await res.text().catch(() => '')).slice(0, 200);
-      console.warn(`[editorial] OpenRouter ${res.status}: ${errBody}`);
-      // Rate-limited — short wait and let caller fall through to Claude
-      if (res.status === 429) await sleep(2000);
-      return null;
-    }
-
-    const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
-    const raw = data.choices?.[0]?.message?.content ?? '';
-    const parsed = robustJsonParse(raw, 'DeepSeek');
-    if (!parsed) { console.warn('[editorial] DeepSeek: could not parse response JSON'); return null; }
-    return parseSummaryResult(parsed);
-  } catch (e) {
-    console.warn('[editorial] OpenRouter call threw:', (e as Error).message.slice(0, 120));
-    return null;
-  }
-}
-
-// ── Nemotron (third option, free tier) ───────────────────────────────────────
-
-async function callNemotron(prompt: string, apiKey: string): Promise<SummaryResult | null> {
-  try {
-    const res = await fetch(OR_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-        'HTTP-Referer': 'https://radarproapp.com',
-        'X-Title': 'Radar',
-      },
-      body: JSON.stringify({
-        model: NM_MODEL,
-        max_tokens: 4096,
-        temperature: 0.25,
-        response_format: { type: 'json_object' },
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a precise JSON generator. Respond with ONLY a valid JSON object. No markdown, no code fences, no explanation — raw JSON only.',
-          },
-          { role: 'user', content: prompt },
-        ],
-      }),
-    });
-
-    if (!res.ok) {
-      const errBody = (await res.text().catch(() => '')).slice(0, 200);
-      console.warn(`[editorial] Nemotron ${res.status}: ${errBody}`);
-      return null;
-    }
-
-    const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
-    const raw = data.choices?.[0]?.message?.content ?? '';
-    const parsed = robustJsonParse(raw, 'Nemotron');
-    if (!parsed) { console.warn('[editorial] Nemotron: could not parse response JSON'); return null; }
-    return parseSummaryResult(parsed);
-  } catch (e) {
-    console.warn('[editorial] Nemotron call threw:', (e as Error).message.slice(0, 120));
-    return null;
-  }
-}
-
-// ── Claude (fallback) ─────────────────────────────────────────────────────────
-
-const SUMMARY_TOOL = {
-  name: 'generate_summary',
-  description: 'Generate an editorial summary with scoring for a content item',
-  input_schema: {
-    type: 'object',
-    properties: {
-      relevant: { type: 'boolean' },
-      what: { type: 'string' },
-      key_takeaways: { type: 'array', items: { type: 'string' } },
-      why: { type: 'string' },
-      how_it_matters_to_you: { type: 'string' },
-      glossary: { type: 'array', items: { type: 'string' } },
-      forwardable: { type: 'boolean' },
-      advantage: { type: 'boolean' },
-      non_obvious: { type: 'boolean' },
-      learnable: { type: 'boolean' },
-      nigeria_relevance: { type: 'integer', enum: [0, 1, 2, 3] },
-      tier: { type: 'integer', enum: [1, 2, 3] },
-    },
-    required: ['relevant', 'what', 'key_takeaways', 'why', 'how_it_matters_to_you', 'glossary', 'forwardable', 'advantage', 'non_obvious', 'learnable', 'nigeria_relevance', 'tier'],
-  },
-};
-
-async function callClaude(prompt: string, apiKey: string): Promise<SummaryResult | null> {
-  for (let attempt = 0; attempt <= 1; attempt++) {
-    try {
-      await throttleClaude();
-      const res = await fetch(CLAUDE_ENDPOINT, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model: CLAUDE_MODEL,
-          max_tokens: 2500,
-          temperature: 0.25,
-          messages: [{ role: 'user', content: prompt }],
-          tools: [SUMMARY_TOOL],
-          tool_choice: { type: 'tool', name: 'generate_summary' },
-        }),
-      });
-
-      if (!res.ok) {
-        const errBody = (await res.text().catch(() => '')).slice(0, 300).replace(/\s+/g, ' ');
-        console.warn(`[editorial] Claude ${res.status}: ${errBody}`);
-        // Billing error — trip the circuit breaker and bail immediately
-        if (res.status === 400 && errBody.includes('credit balance')) {
-          claudeBillingFailed = true;
-          return null;
-        }
-        const transient = res.status === 429 || res.status >= 500;
-        if (transient && attempt === 0) {
-          const retryAfter = parseInt(res.headers.get('retry-after') ?? '', 10);
-          await sleep(Number.isFinite(retryAfter) ? retryAfter * 1000 : 3000);
-          continue;
-        }
-        return null;
-      }
-
-      const data = (await res.json()) as {
-        content?: Array<{ type: string; name?: string; input?: Record<string, unknown> }>;
-      };
-      const toolUse = data.content?.find((c) => c.type === 'tool_use' && c.name === 'generate_summary');
-      if (!toolUse?.input) return null;
-      return parseSummaryResult(toolUse.input);
-    } catch (e) {
-      if (attempt === 0) { await sleep(1000); continue; }
-      console.warn('[editorial] Claude call threw:', (e as Error).message);
-      return null;
-    }
-  }
-  return null;
-}
-
 // ── Public API ────────────────────────────────────────────────────────────────
 
 export async function generateSummary(
@@ -368,38 +185,25 @@ export async function generateSummary(
   description: string,
   topic: string,
 ): Promise<SummaryResult> {
-  const orKey  = process.env.OPENROUTER_API_KEY;
-  const claudeKey = process.env.ANTHROPIC_API_KEY;
-
   const cleaned = description.replace(/<[^>]*>/g, '').trim().slice(0, 2000);
-  // YouTube clips and short podcast descriptions often have no body — use the
-  // title as the body so the AI can still score and summarise the item.
   const body = cleaned.length >= 40 ? cleaned : title;
   if (body.length < 5) return dropOnFailure();
 
   const prompt = buildPrompt(title, body, topic);
+  const raw = await callAI(prompt);
 
-  // Primary: DeepSeek (reliable free tier via OpenRouter)
-  if (orKey) {
-    const result = await callOpenRouter(prompt, orKey);
-    if (result) { consecutiveFailures = 0; return result; }
-  }
-
-  // Second: Nemotron Ultra (free via OpenRouter, larger model)
-  if (orKey) {
-    const result = await callNemotron(prompt, orKey);
-    if (result) { consecutiveFailures = 0; return result; }
-  }
-
-  // Last resort: Claude (paid — only when both free options fail)
-  if (claudeKey && !claudeBillingFailed) {
-    const result = await callClaude(prompt, claudeKey);
-    if (result) { consecutiveFailures = 0; return result; }
+  if (raw) {
+    const parsed = robustJsonParse(raw, 'aiRouter');
+    if (parsed) {
+      const result = parseSummaryResult(parsed);
+      if (result) { consecutiveFailures = 0; return result; }
+    }
+    console.warn('[editorial] could not parse AI response JSON');
   }
 
   consecutiveFailures++;
   if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
-    console.error(`[editorial] Both AI providers failed ${consecutiveFailures} times in a row — aborting remaining items`);
+    console.error(`[editorial] AI providers failed ${consecutiveFailures} times in a row — aborting remaining items`);
   }
   return dropOnFailure();
 }
