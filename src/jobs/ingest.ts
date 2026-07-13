@@ -742,12 +742,41 @@ export async function runIngest() {
     console.warn('[ingest] failed to save ingest status:', (e as Error).message);
   }
 
-  // Purge content older than 7 days to keep the feed fresh without unbounded growth.
+  // Purge news/clips older than 7 days. Podcasts are excluded — they're cached in
+  // S3 and are evergreen content that shouldn't be treated as time-limited news.
   try {
     const purged = await purgeContentOlderThan(7);
     if (purged > 0) console.log(`[ingest] purged ${purged} items older than 7 days`);
   } catch (e) {
     console.error('[ingest] failed to purge old content:', (e as Error).message);
+  }
+
+  // Write podcast snapshot to S3 so episodes survive DB purges and load fast.
+  try {
+    const { writePodcastCache } = await import('../lib/s3.js');
+    const podcastRows = await prisma.content.findMany({
+      where: { type: 'podcast' },
+      orderBy: { createdAt: 'desc' },
+      take: 500,
+    });
+    if (podcastRows.length > 0) {
+      const episodes = podcastRows.map(r => ({
+        id: r.id,
+        type: 'podcast' as const,
+        title: r.title,
+        source: r.source,
+        topic: r.topicId ?? '',
+        duration: r.duration ?? 0,
+        audioUrl: r.audioUrl ?? undefined,
+        thumbnailUrl: r.thumbnailUrl ?? undefined,
+        createdAt: r.createdAt.toISOString(),
+        summary: undefined as undefined,
+      }));
+      await writePodcastCache(episodes);
+      console.log(`[ingest] wrote ${episodes.length} podcast episodes to S3`);
+    }
+  } catch (e) {
+    console.warn('[ingest] S3 podcast cache write failed (non-fatal):', (e as Error).message);
   }
 
   return { total, ...stats };
@@ -762,7 +791,7 @@ export async function runIngest() {
 async function purgeContentOlderThan(days: number): Promise<number> {
   const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
   const result = await prisma.content.deleteMany({
-    where: { createdAt: { lt: cutoff } },
+    where: { createdAt: { lt: cutoff }, type: { not: 'podcast' } },
   });
   return result.count;
 }

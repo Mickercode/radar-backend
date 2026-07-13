@@ -4,6 +4,7 @@ import Parser from 'rss-parser';
 import { asyncHandler } from '../lib/http';
 import { searchPodcasts, getEpisodes, getEpisodesByFeedUrl } from '../lib/podcast-index';
 import { PODCAST_FEEDS, PROMO_TITLE_PATTERNS } from '../jobs/feeds';
+import { readPodcastCache } from '../lib/s3';
 
 // Public podcast search + episode discovery — no auth required. The user searches
 // for a podcast, picks one, and streams episodes directly from the source audio
@@ -41,8 +42,8 @@ function parseItunesDuration(raw: string | undefined): number {
   return Number(raw) || 1800;
 }
 
-// GET /podcasts/live — fetch episodes directly from PODCAST_FEEDS RSS, no ingest needed.
-// Returns up to 30 items across all configured feeds, newest first. No AI summaries.
+// GET /podcasts/live — S3 cache first (populated by ingest), falls back to live RSS parsing.
+// S3 cache is faster, survives ingest failures, and includes more episodes.
 podcastsRouter.get(
   '/live',
   asyncHandler(async (_req, res) => {
@@ -51,6 +52,13 @@ podcastsRouter.get(
       duration: number; audioUrl?: string; thumbnailUrl?: string; createdAt: string; summary: undefined;
     };
 
+    // Try S3 cache first
+    const cached = await readPodcastCache();
+    if (cached && cached.length > 0) {
+      return res.json(cached.slice(0, 60));
+    }
+
+    // Fall back to live RSS parsing
     const results = await Promise.allSettled(
       PODCAST_FEEDS.map(async (feed): Promise<PodcastLiveItem[]> => {
         const parsed = await podcastParser.parseURL(feed.url);
