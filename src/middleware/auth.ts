@@ -14,7 +14,7 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction): v
   const token = extractBearer(req);
   if (!token) return next(unauthorized('Missing bearer token'));
   const claims = verifyAuthToken(token); // throws ApiError(401) on bad token
-  req.auth = { userId: claims.sub, email: claims.email, isAdmin: claims.isAdmin };
+  req.auth = { userId: claims.sub, email: claims.email, isAdmin: claims.isAdmin, isSuperAdmin: claims.isSuperAdmin };
   next();
 }
 
@@ -28,7 +28,7 @@ export function optionalAuth(req: Request, _res: Response, next: NextFunction): 
   if (!token) return next();
   try {
     const claims = verifyAuthToken(token);
-    req.auth = { userId: claims.sub, email: claims.email, isAdmin: claims.isAdmin };
+    req.auth = { userId: claims.sub, email: claims.email, isAdmin: claims.isAdmin, isSuperAdmin: claims.isSuperAdmin };
   } catch {
     // Ignore a bad/expired token on a public route — treat as anonymous.
   }

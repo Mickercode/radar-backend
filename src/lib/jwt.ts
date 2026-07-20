@@ -11,10 +11,11 @@ export interface AuthClaims {
   sub: string; // app_users.id
   email: string;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
 }
 
-export function signAuthToken(userId: string, email: string, isAdmin = false): string {
-  return jwt.sign({ sub: userId, email, isAdmin }, env.APP_JWT_SECRET, {
+export function signAuthToken(userId: string, email: string, isAdmin = false, isSuperAdmin = false): string {
+  return jwt.sign({ sub: userId, email, isAdmin, isSuperAdmin }, env.APP_JWT_SECRET, {
     expiresIn: TOKEN_TTL,
   });
 }
@@ -33,6 +34,7 @@ export function verifyAuthToken(token: string): AuthClaims {
         sub: decoded.sub,
         email: (decoded as { email: string }).email,
         isAdmin: !!(decoded as { isAdmin?: unknown }).isAdmin,
+        isSuperAdmin: !!(decoded as { isSuperAdmin?: unknown }).isSuperAdmin,
       };
     }
     throw unauthorized('Malformed token');

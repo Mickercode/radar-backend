@@ -20,10 +20,34 @@ function requireAdmin(req: Request, _res: Response, next: NextFunction): void {
   next();
 }
 
+function requireSuperAdmin(req: Request, _res: Response, next: NextFunction): void {
+  if (!req.auth?.isSuperAdmin) {
+    next(new ApiError(403, 'Super admin access required'));
+    return;
+  }
+  next();
+}
+
 // GET /admin/me — returns the email + admin status the server sees in the token
 adminRouter.get('/admin/me', requireAuth, asyncHandler(async (req, res) => {
-  res.json({ email: req.auth?.email ?? '', isAdmin: req.auth?.isAdmin ?? false });
+  res.json({ email: req.auth?.email ?? '', isAdmin: req.auth?.isAdmin ?? false, isSuperAdmin: req.auth?.isSuperAdmin ?? false });
 }));
+
+// GET /admin/admins — super admin only: list all admins with lastLoginAt
+adminRouter.get(
+  '/admin/admins',
+  requireAuth,
+  requireAdmin,
+  requireSuperAdmin,
+  asyncHandler(async (_req, res) => {
+    const admins = await prisma.appUser.findMany({
+      where: { isAdmin: true },
+      select: { id: true, email: true, name: true, isSuperAdmin: true, lastLoginAt: true, createdAt: true },
+      orderBy: { lastLoginAt: 'desc' },
+    });
+    res.json(admins);
+  }),
+);
 
 // POST /admin/grant-admin { email } → { ok, email }
 // Grants permanent DB-level admin to any existing user. Requires admin JWT.

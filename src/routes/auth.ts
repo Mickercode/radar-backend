@@ -21,7 +21,7 @@ const BOOTSTRAP_ADMINS = new Set(
 );
 
 function publicUser(u: AppUser) {
-  return { id: u.id, email: u.email, name: u.name, isAdmin: resolveIsAdmin(u) };
+  return { id: u.id, email: u.email, name: u.name, isAdmin: resolveIsAdmin(u), isSuperAdmin: u.isSuperAdmin };
 }
 
 function resolveIsAdmin(u: AppUser): boolean {
@@ -140,8 +140,12 @@ authRouter.post(
     if (!user) throw unauthorized(INVALID);
     const ok = await verifyPassword(password, user.passwordHash);
     if (!ok) throw unauthorized(INVALID);
-    const token = signAuthToken(user.id, user.email, resolveIsAdmin(user));
-    res.json({ token, user: publicUser(user) });
+    const updated = await prisma.appUser.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date() },
+    });
+    const token = signAuthToken(updated.id, updated.email, resolveIsAdmin(updated), updated.isSuperAdmin);
+    res.json({ token, user: publicUser(updated) });
   }),
 );
 
