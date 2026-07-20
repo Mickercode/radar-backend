@@ -1,12 +1,19 @@
 import { env } from '../config/env';
 import { ApiError } from './http';
 import { jsonrepair } from 'jsonrepair';
+import { callAI } from './aiRouter';
+
+// Provider priority for structured analysis:
+//   1. Free daily tokens (Groq → Gemini → Cerebras) via aiRouter
+//   2. OpenRouter free model (Nemotron Ultra) — only if aiRouter exhausted
+//   3. OpenRouter paid model (DeepSeek)         — only if free OR models fail
+//   4. Claude via Anthropic                     — absolute last resort (paid)
 
 const CLAUDE_MODEL    = 'claude-sonnet-4-6';
 const CLAUDE_ENDPOINT = 'https://api.anthropic.com/v1/messages';
 
-const NM_MODEL    = 'nvidia/nemotron-3-ultra-550b-a55b:free';
-const DS_MODEL    = 'deepseek/deepseek-chat';
+const NM_MODEL = 'nvidia/nemotron-3-ultra-550b-a55b:free';
+const DS_MODEL = 'deepseek/deepseek-chat';
 const OR_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
 
 export interface ToolDefinition {
@@ -20,7 +27,6 @@ interface GenerateOptions {
   maxOutputTokens?: number;
 }
 
-// ── OpenRouter (Nemotron or DeepSeek) ────────────────────────────────────────
 async function generateJsonViaOpenRouter(
   model: string,
   prompt: string,
@@ -53,11 +59,12 @@ No markdown, no code fences, no explanation — raw JSON only.`;
         { role: 'user', content: prompt },
       ],
     }),
+    signal: AbortSignal.timeout(45_000),
   });
 
   if (!res.ok) {
     const errBody = await res.text().catch(() => '');
-    throw new Error(`or-${res.status}: ${errBody}`);
+    throw new Error(`or-${res.status}: ${errBody.slice(0, 200)}`);
   }
 
   const data = (await res.json()) as {
@@ -71,7 +78,6 @@ No markdown, no code fences, no explanation — raw JSON only.`;
   }
 }
 
-// ── Primary: Claude via Anthropic API ────────────────────────────────────────
 async function generateJsonViaClaude(
   prompt: string,
   tool: ToolDefinition,
@@ -100,12 +106,12 @@ async function generateJsonViaClaude(
       ],
       tool_choice: { type: 'tool', name: tool.name },
     }),
+    signal: AbortSignal.timeout(45_000),
   });
 
   if (!res.ok) {
     const errBody = await res.text().catch(() => '');
-    // 529 = Anthropic overloaded; 402 = billing; 401 = bad key — all warrant fallback.
-    throw new Error(`claude-${res.status}: ${errBody}`);
+    throw new Error(`claude-${res.status}: ${errBody.slice(0, 200)}`);
   }
 
   const data = (await res.json()) as {
@@ -117,29 +123,41 @@ async function generateJsonViaClaude(
 }
 
 /**
- * Generate structured JSON. Priority: Nemotron (free) → DeepSeek (free) → Claude (last resort).
+ * Generate structured JSON for user-facing analysis.
+ * Priority: free aiRouter providers → OR free → OR paid → Claude (last resort).
  */
 export async function generateJson(
   prompt: string,
   tool: ToolDefinition,
   opts: GenerateOptions = {},
 ): Promise<unknown> {
+  // 1. Try free providers (Groq / Gemini / Cerebras) via aiRouter
+  try {
+    const raw = await callAI(prompt);
+    if (raw) {
+      const parsed = JSON.parse(jsonrepair(raw)) as unknown;
+      return parsed;
+    }
+  } catch (e) {
+    console.warn('[ai] free providers failed for analysis:', (e as Error).message?.slice(0, 100));
+  }
+
   if (env.OPENROUTER_API_KEY) {
-    // 1. Nemotron Ultra (free)
+    // 2. Nemotron Ultra (free tier on OpenRouter)
     try {
       return await generateJsonViaOpenRouter(NM_MODEL, prompt, tool, opts);
     } catch (nmErr) {
-      console.warn('[ai] Nemotron failed, trying DeepSeek:', (nmErr as Error).message);
+      console.warn('[ai] Nemotron failed:', (nmErr as Error).message?.slice(0, 80));
     }
-    // 2. DeepSeek (free)
+    // 3. DeepSeek via OpenRouter (paid — last resort before Claude)
     try {
       return await generateJsonViaOpenRouter(DS_MODEL, prompt, tool, opts);
     } catch (dsErr) {
-      console.warn('[ai] DeepSeek failed, falling back to Claude:', (dsErr as Error).message);
+      console.warn('[ai] DeepSeek failed, trying Claude:', (dsErr as Error).message?.slice(0, 80));
     }
   }
 
-  // 3. Claude (last resort — paid)
+  // 4. Claude (absolute last resort — paid)
   try {
     return await generateJsonViaClaude(prompt, tool, opts);
   } catch (claudeErr) {

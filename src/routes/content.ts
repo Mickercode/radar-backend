@@ -3,6 +3,8 @@ import multer from 'multer';
 import { asyncHandler, badRequest, ApiError } from '../lib/http';
 import { requireAuth } from '../middleware/auth';
 import { generateJson } from '../lib/anthropic';
+import { checkAndIncrementDailyLimit } from '../lib/dailyLimit';
+import { prisma } from '../lib/prisma';
 
 export const contentRouter = Router();
 contentRouter.use(requireAuth);
@@ -25,12 +27,14 @@ const upload = multer({
   },
 });
 
-async function extractTextFromPdf(buffer: Buffer): Promise<string> {
+const PDF_PAGE_LIMIT = 20;
+
+async function extractTextFromPdf(buffer: Buffer): Promise<{ text: string; pages: number }> {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const pdfParse = require('pdf-parse') as (buf: Buffer) => Promise<{ text: string }>;
+    const pdfParse = require('pdf-parse') as (buf: Buffer) => Promise<{ text: string; numpages: number }>;
     const data = await pdfParse(buffer);
-    return data.text;
+    return { text: data.text, pages: data.numpages };
   } catch {
     throw new ApiError(422, 'Failed to parse PDF file');
   }
@@ -96,11 +100,21 @@ contentRouter.post(
   asyncHandler(async (req, res) => {
     if (!req.file) throw badRequest('No file uploaded');
 
+    // Check daily limit before doing any heavy work
+    const uid = req.auth!.userId;
+    const user = await prisma.appUser.findUnique({ where: { id: uid }, select: { isPremium: true } });
+    await checkAndIncrementDailyLimit(uid, user?.isPremium ?? false);
+
     let text: string;
     switch (req.file.mimetype) {
-      case 'application/pdf':
-        text = await extractTextFromPdf(req.file.buffer);
+      case 'application/pdf': {
+        const { text: pdfText, pages } = await extractTextFromPdf(req.file.buffer);
+        if (pages > PDF_PAGE_LIMIT) {
+          throw new ApiError(400, `This PDF has ${pages} pages. Only documents up to ${PDF_PAGE_LIMIT} pages are supported.`);
+        }
+        text = pdfText;
         break;
+      }
       case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
       case 'application/msword':
         text = await extractTextFromWord(req.file.buffer);

@@ -14,6 +14,7 @@ interface Provider {
   // 'anthropic' = x-api-key header + /messages format (custom shaper)
   authStyle: 'bearer' | 'anthropic';
   status?: 'exhausted';
+  timeoutMs?: number;
 }
 
 const PROVIDERS: Provider[] = [
@@ -33,12 +34,41 @@ const PROVIDERS: Provider[] = [
   },
   {
     name: 'Cerebras',
-    // Free tier — model name changes without warning. Update `model` if requests
-    // start returning 404/model-not-found; check api.cerebras.ai for current list.
+    // Free tier — use gemma-4-31b (non-reasoning). gpt-oss-120b is a reasoning
+    // model that burns all max_tokens on <thinking> leaving content empty.
     endpoint: 'https://api.cerebras.ai/v1/chat/completions',
-    model: 'gpt-oss-120b',
+    model: 'gemma-4-31b',
     apiKeyEnv: 'CEREBRAS_API_KEY',
     authStyle: 'bearer',
+  },
+  {
+    // Chutes account balance is $0 — paid service, no free tier.
+    name: 'Chutes',
+    endpoint: 'https://llm.chutes.ai/v1/chat/completions',
+    model: 'deepseek-ai/DeepSeek-V3-0324',
+    apiKeyEnv: 'CHUTES_API_KEY',
+    authStyle: 'bearer',
+    status: 'exhausted',
+  },
+  {
+    // Second NIM key — deepseek-v4-flash responds quickly; reasoning_content is
+    // ignored, actual JSON lands in choices[0].message.content as usual.
+    name: 'NvidiaKimi',
+    endpoint: 'https://integrate.api.nvidia.com/v1/chat/completions',
+    model: 'deepseek-ai/deepseek-v4-flash',
+    apiKeyEnv: 'NVIDIA_KIMI_API_KEY',
+    authStyle: 'bearer',
+    timeoutMs: 25_000,
+  },
+  {
+    // First NIM key — consistently times out on free tier queue.
+    name: 'Nvidia',
+    endpoint: 'https://integrate.api.nvidia.com/v1/chat/completions',
+    model: 'meta/llama-3.1-8b-instruct',
+    apiKeyEnv: 'NVIDIA_API_KEY',
+    authStyle: 'bearer',
+    timeoutMs: 20_000,
+    status: 'exhausted',
   },
   {
     name: 'Anthropic',
@@ -48,14 +78,12 @@ const PROVIDERS: Provider[] = [
     authStyle: 'anthropic',
   },
   {
-    // OpenRouter is currently out of credits. Flip status back to undefined
-    // (don't delete the entry) when credits are restored.
+    // Last resort — paid. Only used when all free providers are exhausted/rate-limited.
     name: 'OpenRouter',
     endpoint: 'https://openrouter.ai/api/v1/chat/completions',
     model: 'deepseek/deepseek-chat',
     apiKeyEnv: 'OPENROUTER_API_KEY',
     authStyle: 'bearer',
-    status: 'exhausted',
   },
 ];
 
@@ -121,13 +149,14 @@ async function callBearer(p: Provider, prompt: string): Promise<ProviderResult> 
       model: p.model,
       max_tokens: 2500,
       temperature: 0.25,
-      response_format: { type: 'json_object' },
+      // Nvidia NIM and Cerebras don't support json_object response_format
+      ...(p.name !== 'Nvidia' && p.name !== 'Cerebras' ? { response_format: { type: 'json_object' } } : {}),
       messages: [
         { role: 'system', content: 'You are a precise JSON generator. Respond with ONLY a valid JSON object. No markdown, no code fences, no explanation — raw JSON only.' },
         { role: 'user', content: prompt },
       ],
     }),
-    signal: AbortSignal.timeout(35_000),
+    signal: AbortSignal.timeout(p.timeoutMs ?? 35_000),
   });
 
   if (!res.ok) {
@@ -138,8 +167,16 @@ async function callBearer(p: Provider, prompt: string): Promise<ProviderResult> 
     return null;
   }
 
-  const data = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
-  return data.choices?.[0]?.message?.content ?? null;
+  const data = await res.json() as { choices?: Array<{ message?: { content?: string } }>; error?: unknown };
+  if (data.error) {
+    console.warn(`[aiRouter] ${p.name} 200 with error body: ${JSON.stringify(data.error).slice(0, 200)}`);
+    return null;
+  }
+  const content = data.choices?.[0]?.message?.content ?? null;
+  if (!content) {
+    console.warn(`[aiRouter] ${p.name} 200 but empty content: ${JSON.stringify(data).slice(0, 200)}`);
+  }
+  return content;
 }
 
 async function callAnthropic(p: Provider, prompt: string): Promise<ProviderResult> {
@@ -223,11 +260,8 @@ export async function callAI(prompt: string): Promise<string | null> {
       // 'quota' = rate-limited or billing issue; quotaResets already set — don't trip circuit
       if (result !== 'quota') onFailure(p.name);
     } catch (e) {
-      const msg = (e as Error).message ?? '';
-      // Timeout or network error
-      if (msg.includes('TimeoutError') || msg.includes('ETIMEDOUT') || msg.includes('fetch')) {
-        console.warn(`[aiRouter] ${p.name} network error: ${msg.slice(0, 80)}`);
-      }
+      const err = e as Error;
+      console.warn(`[aiRouter] ${p.name} threw: ${(err.name ?? '')} ${(err.message ?? '').slice(0, 100)}`);
       onFailure(p.name);
     }
 
@@ -240,7 +274,7 @@ export async function callAI(prompt: string): Promise<string | null> {
     const resets = [...quotaResets.values()].filter(t => t > Date.now());
     const minReset = resets.length ? Math.min(...resets) : 0;
     const waitMs = minReset - Date.now();
-    if (waitMs > 0 && waitMs <= 35_000) {
+    if (waitMs > 0 && waitMs <= 90_000) {
       await sleep(waitMs + 300);
       for (let i = 0; i < PROVIDERS.length; i++) {
         const idx = (startCursor + i) % PROVIDERS.length;
