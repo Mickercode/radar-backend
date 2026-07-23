@@ -99,7 +99,7 @@ export const NEWS_FEEDS: NewsFeed[] = [
   { url: 'https://www.bellanaija.com/music/feed/',                source: 'BellaNaija Music',       topic: 'music'  },
   { url: 'https://www.bellanaija.com/category/nollywood/feed/',   source: 'BellaNaija Nollywood',   topic: 'film'   },
   // Guardian Entertainment returns 403
-  { url: 'https://kemifilani.ng/feed/',                           source: 'Kemi Filani',            topic: 'film'   },
+  // Kemi Filani removed — low editorial quality, gossip-heavy, wrong category fits
   { url: 'https://www.naijavibe.net/feed/',                       source: 'NaijaVibe',              topic: 'music'  },
   { url: 'https://whatkeptmeup.com/feed/',                        source: 'What Kept Me Up',        topic: 'music'  },
   { url: 'https://tooxclusive.com/feed/',                         source: 'TooXclusive',            topic: 'music'  },
@@ -495,7 +495,7 @@ export const YOUTUBE_CHANNELS: YoutubeChannel[] = [
 
   // ── Business ─────────────────────────────────────────────────────────────
   { channelId: 'UCvJJ_dzjViJCoLf5uKUTwoA', source: 'CNBC',               topic: 'business'  },
-  { channelId: 'UCHmE4FkFGV8ZaHJU_yjMhXg', source: 'Forbes',             topic: 'business'  },
+  { channelId: 'UCmh7afBz-uWwOSSNTqUBAhg', source: 'Forbes',             topic: 'business'  },
   // { channelId: 'PASTE_AFROPOLITAN_ID',   source: 'Afropolitan',         topic: 'business'  },
 
   // ── Finance ───────────────────────────────────────────────────────────────
@@ -521,14 +521,14 @@ export const YOUTUBE_CHANNELS: YoutubeChannel[] = [
 
   // ── Politics / News ────────────────────────────────────────────────────────
   { channelId: 'UCB_qr75-ydFVKSF9Dmo6izg', source: 'Al Jazeera Eng',    topic: 'politics'  },
-  { channelId: 'UC16niRr50-MSBwiU3jmlApQ', source: 'BBC News',           topic: 'politics'  },
+  { channelId: 'UC16niRr50-MSBwiO3YDb3RA', source: 'BBC News',           topic: 'politics'  },
   { channelId: 'UCknLrEdhRCp1aegoMqRaCZg', source: 'DW',                 topic: 'politics'  },
   { channelId: 'UCupvZG-5ko_eiXAupbDfxWw', source: 'CNN',                topic: 'politics'  },
   // { channelId: 'PASTE_CHANNELS_TV_ID',   source: 'Channels TV',        topic: 'politics'  },
   // { channelId: 'PASTE_TVC_NEWS_ID',      source: 'TVC News',           topic: 'politics'  },
 
   // ── Music ─────────────────────────────────────────────────────────────────
-  { channelId: 'UCX4tDd0VDIrTiZYqTSVWvAg', source: 'BET',               topic: 'music'     },
+  { channelId: 'UCcVqCJ_9owb1zM43vqswMNQ', source: 'BET',               topic: 'music'     },
   { channelId: 'UC4eYXhJI4-7wSWc8UNRwD4A', source: 'NPR Music',         topic: 'music'     },
   // { channelId: 'PASTE_NOTJUSTOK_ID',     source: 'NotJustOk TV',       topic: 'music'     },
 
@@ -536,11 +536,11 @@ export const YOUTUBE_CHANNELS: YoutubeChannel[] = [
   { channelId: 'UCnUYZLuoy1rq1aVMwx4aTzw', source: 'GQ',                 topic: 'fashion'   },
 
   // ── Health ────────────────────────────────────────────────────────────────
-  { channelId: 'UCrj-7x7UMRFCWd5H_c1i4Ug', source: 'Cleveland Clinic',  topic: 'health'    },
-  { channelId: 'UCKhPBDNJVqXFRTRg8lNwRuQ', source: 'WebMD',             topic: 'health'    },
+  { channelId: 'UCxyiSz4m161Z6frOsFxJpgw', source: 'Cleveland Clinic',  topic: 'health'    },
+  { channelId: 'UCzaH06jOrwGOgzbXwS_ga_w', source: 'WebMD',             topic: 'health'    },
 
   // ── Climate ───────────────────────────────────────────────────────────────
-  { channelId: 'UCZelOtGCkHFr3iKDBE-7D8w', source: 'DW Planet A',       topic: 'climate'   },
+  { channelId: 'UCb72Gn5LXaLEcsOuPKGfQOg', source: 'DW Planet A',       topic: 'climate'   },
   // { channelId: 'PASTE_CONVERSATION_AFRICA_ID', source: 'The Conversation Africa', topic: 'science' },
 ];
 

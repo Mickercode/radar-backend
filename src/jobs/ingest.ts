@@ -22,6 +22,7 @@ import { generateSummary, aiIsHealthy, getAiStatus, type SummaryResult } from '.
 import { searchEpisodes as listenNotesSearch, getListenNotesUsage } from '../lib/listennotes';
 import { TOPIC_SEARCH_TERMS } from './feeds';
 import { sendIngestDigest } from '../lib/email';
+import { classifyPrimary } from '../lib/contentClassifier';
 
 // Radar ingestion worker. Pulls RSS (news + podcasts) + YouTube clips, scores
 // them through the Claude editorial engine, and writes publishable rows (Tier
@@ -38,6 +39,7 @@ interface FeedItem {
   contentSnippet?: string;
   contentEncoded?: string;
   isoDate?: string;
+  pubDate?: string;
   enclosure?: { url?: string; type?: string };
   itunes?: { duration?: string; image?: string };
   mediaThumbnail?: { $?: { url?: string } };
@@ -57,6 +59,19 @@ const parser: Parser<unknown, FeedItem> = new Parser({
     ],
   },
 });
+
+// ── Date freshness gate ────────────────────────────────────────────────────
+// Accept only content published in the current calendar month OR the previous
+// calendar month. Anything older (2025, earlier 2026 months) is stale.
+function isRecentEnough(dateStr: string | null | undefined): boolean {
+  if (!dateStr) return true; // no date → let it through, AI will score it
+  const pub = new Date(dateStr);
+  if (isNaN(pub.getTime())) return true;
+  const now = new Date();
+  // Start of last month (1st, 00:00:00 UTC)
+  const cutoff = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+  return pub >= cutoff;
+}
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -202,9 +217,18 @@ async function getTopicId(slug: string): Promise<string> {
   return topic.id;
 }
 
-async function alreadyHave(source: string, title: string): Promise<boolean> {
+async function alreadyHave(source: string, title: string, articleUrl?: string | null): Promise<boolean> {
+  // URL is the most reliable dedup key — same article always has the same URL.
+  // Falls back to source+title for feeds that don't provide URLs.
+  if (articleUrl) {
+    return !!(await prisma.content.findFirst({ where: { articleUrl }, select: { id: true } }));
+  }
   return !!(await prisma.content.findFirst({ where: { source, title }, select: { id: true } }));
 }
+
+// Tracks article URLs seen in the current ingest run to avoid re-processing
+// within the same run (before DB writes are visible to subsequent queries).
+const seenUrls = new Set<string>();
 
 interface Stats {
   news: number; podcasts: number; clips: number;
@@ -289,10 +313,19 @@ async function ingestNewsFromMediastack(stats: Stats, budget: { left: number }) 
     if (!title) continue;
     if (looksLikePromo(title)) { stats.skippedPromo++; continue; }
 
-    const source = article.source || 'Unknown';
-    if (await alreadyHave(source, title)) continue;
+    // Only ingest content from this month or last month.
+    if (!isRecentEnough(article.published_at)) { stats.skippedAge++; continue; }
 
-    const topic = MS_CATEGORY_TO_TOPIC[article.category] ?? 'politics';
+    const source = article.source || 'Unknown';
+    const articleUrl = article.url ?? null;
+    if (articleUrl && seenUrls.has(articleUrl)) continue;
+    if (await alreadyHave(source, title, articleUrl)) continue;
+    if (articleUrl) seenUrls.add(articleUrl);
+
+    // Use the mapped topic; if the Mediastack category falls through to the
+    // default, let the classifier pick a better slug from title + description.
+    const mappedTopic = MS_CATEGORY_TO_TOPIC[article.category];
+    const topic = mappedTopic ?? classifyPrimary({ title, description: article.description ?? '' });
     const topicId = await getTopicId(topic);
     const description = article.description ?? '';
 
@@ -361,7 +394,14 @@ async function ingestNews(stats: Stats, budget: { left: number }) {
       const title = item.title?.trim();
       if (!title) continue;
       if (looksLikePromo(title)) { stats.skippedPromo++; continue; }
-      if (await alreadyHave(feed.source, title)) continue;
+
+      // Only ingest content from this month or last month.
+      if (!isRecentEnough(item.isoDate ?? item.pubDate)) { stats.skippedAge++; continue; }
+
+      const itemUrl = item.link ?? null;
+      if (itemUrl && seenUrls.has(itemUrl)) continue;
+      if (await alreadyHave(feed.source, title, itemUrl)) continue;
+      if (itemUrl) seenUrls.add(itemUrl);
 
       const description = descriptionOf(item);
       const s = await generateSummary(title, description, feed.topic);
@@ -450,10 +490,8 @@ async function ingestPodcasts(stats: Stats, budget: { left: number }) {
       const duration = parseItunesDuration(item.itunes?.duration) ?? 1800;
       if (duration < MIN_PODCAST_DURATION_SEC || duration > MAX_PODCAST_DURATION_SEC) { stats.skippedDuration++; continue; }
 
-      if (item.isoDate) {
-        const ageDays = (Date.now() - new Date(item.isoDate).getTime()) / 86_400_000;
-        if (ageDays > MAX_PODCAST_AGE_DAYS) { stats.skippedAge++; continue; }
-      }
+      // Only ingest content from this month or last month.
+      if (!isRecentEnough(item.isoDate)) { stats.skippedAge++; continue; }
 
       if (await alreadyHave(feed.source, title)) continue;
 
@@ -514,8 +552,7 @@ async function ingestPodcasts(stats: Stats, budget: { left: number }) {
       const title = ep.title?.trim();
       if (!title || looksLikePromo(title)) continue;
 
-      const ageDays = (Date.now() - ep.pub_date_ms) / 86_400_000;
-      if (ageDays > MAX_PODCAST_AGE_DAYS || !ep.audio) continue;
+      if (!isRecentEnough(new Date(ep.pub_date_ms).toISOString()) || !ep.audio) continue;
       if (await alreadyHave(ep.podcast.title, title)) continue;
 
       await savePodcastEpisode(
@@ -630,13 +667,20 @@ async function ingestClips(stats: Stats, budget: { left: number }) {
     if (!s.relevant) { stats.skippedIrrelevant++; continue; }
     if (s.tier === 3) { stats.skippedTier3++; continue; }
 
+    // If the AI flagged this relevant, double-check topic assignment: the
+    // classifier may find a better slug than the channel's hardcoded one.
+    const classifiedTopic = classifyPrimary({ title: c.title, description: c.description });
+    const finalTopicId = classifiedTopic !== 'general' && classifiedTopic !== c.topic
+      ? await getTopicId(classifiedTopic)
+      : c.topicId;
+
     try {
       await prisma.content.create({
         data: {
           type: 'clip', title: c.title, source: c.source, duration: c.duration,
           thumbnailUrl: `https://i.ytimg.com/vi/${c.videoId}/hqdefault.jpg`,
           videoUrl: `https://www.youtube.com/watch?v=${c.videoId}`,
-          externalId: c.videoId, aspectRatio: 0.5625, topicId: c.topicId,
+          externalId: c.videoId, aspectRatio: 0.5625, topicId: finalTopicId,
           summary: { create: summaryData(s) },
         },
       });
@@ -742,11 +786,11 @@ export async function runIngest() {
     console.warn('[ingest] failed to save ingest status:', (e as Error).message);
   }
 
-  // Purge news/clips older than 7 days. Podcasts are excluded — they're cached in
+  // Purge news older than 24 h and clips older than 7 days. Podcasts are excluded —
   // S3 and are evergreen content that shouldn't be treated as time-limited news.
   try {
-    const purged = await purgeContentOlderThan(7);
-    if (purged > 0) console.log(`[ingest] purged ${purged} items older than 7 days`);
+    const purged = await purgeContent({ newsHours: 24, clipsHours: 7 * 24 });
+    if (purged > 0) console.log(`[ingest] purged ${purged} items (news >24h, clips >7d)`);
   } catch (e) {
     console.error('[ingest] failed to purge old content:', (e as Error).message);
   }
@@ -788,12 +832,14 @@ export async function runIngest() {
  * the database from growing unbounded while preserving at least a week of
  * history. Cascade deletes also clean up associated summaries and key moments.
  */
-async function purgeContentOlderThan(days: number): Promise<number> {
-  const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-  const result = await prisma.content.deleteMany({
-    where: { createdAt: { lt: cutoff }, type: { not: 'podcast' } },
-  });
-  return result.count;
+async function purgeContent({ newsHours, clipsHours }: { newsHours: number; clipsHours: number }): Promise<number> {
+  const newsCutoff  = new Date(Date.now() - newsHours  * 60 * 60 * 1000);
+  const clipsCutoff = new Date(Date.now() - clipsHours * 60 * 60 * 1000);
+  const [news, clips] = await Promise.all([
+    prisma.content.deleteMany({ where: { type: 'news',  createdAt: { lt: newsCutoff  } } }),
+    prisma.content.deleteMany({ where: { type: 'clip',  createdAt: { lt: clipsCutoff } } }),
+  ]);
+  return news.count + clips.count;
 }
 
 /**
